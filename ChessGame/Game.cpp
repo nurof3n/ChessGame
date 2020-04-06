@@ -5,6 +5,10 @@
 #include <conio.h>
 #include <thread>
 #include <chrono>
+#include <windows.h>
+#include <limits>
+
+#define SKIP_INTRO
 
 using namespace std::chrono_literals;
 
@@ -28,6 +32,7 @@ void Game::Setup() noexcept {
 
 	system( "cls" );
 
+#ifndef SKIP_INTRO
 	std::cout << "READY? TYPE MACARENA\n";
 	std::string color = "";
 	do {
@@ -47,6 +52,7 @@ void Game::Setup() noexcept {
 	std::this_thread::sleep_for( 2s );
 	std::cout << "IMEDIAT TERMIN BEREA SI VIN...\n";
 	std::this_thread::sleep_for( 2s );
+#endif
 
 	_tabla.Setup();
 }
@@ -58,15 +64,20 @@ void Game::Go() {
 
 	std::optional<Game::RezMutare> result;
 	do {
-		std::string mutare;
-		std::cin >> mutare;
-		result = ProcesareMutare( mutare );
+		std::string pos1 = "", pos2 = "";
+		FlushConsoleInputBuffer( GetStdHandle( STD_INPUT_HANDLE ) );
+		std::getline( std::cin, pos1, '\n' );
+		std::getline( std::cin, pos2, '\n' );
+		result = ProcesareMutare( pos1, pos2 );
 		if( !result ) {
 			std::cout << "MUTARE INVALIDA, TRY AGAIN...";
 			std::this_thread::sleep_for( 1s );
+			FlushConsoleInputBuffer( GetStdHandle( STD_INPUT_HANDLE ) );
 			std::cout << "\33[2K\r";	//erases crt line
 			std::cout << "\033[F";		//goes back one line
-			std::cout << "\33[2K\r";
+			std::cout << "\33[2K\r";	//erases the previous line
+			std::cout << "\033[F";		//goes back one line
+			std::cout << "\33[2K\r";	//erases the previous line
 		}
 
 	} while( !result );
@@ -76,7 +87,7 @@ void Game::Go() {
 
 void Game::Draw() {}
 
-std::optional<Game::RezMutare> Game::ProcesareMutare( const std::string& ) noexcept {
+std::optional<Game::RezMutare> Game::ProcesareMutare( const std::string& pos1, const std::string& pos2 ) noexcept {
 
 	return {};
 }

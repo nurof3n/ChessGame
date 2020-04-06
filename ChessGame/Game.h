@@ -24,7 +24,7 @@ public:
 	void Setup() noexcept;
 	void Go();
 	void Draw();
-	std::optional<RezMutare> ProcesareMutare( const std::string& ) noexcept;
+	std::optional<RezMutare> ProcesareMutare( const std::string&, const std::string& ) noexcept;
 private:
 	static Game* _instance;
 	Tabla _tabla;
