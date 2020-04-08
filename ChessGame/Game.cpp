@@ -19,6 +19,8 @@ Game& Game::GetInstance() noexcept {
 }
 
 void Game::Setup() noexcept {
+	ShowWindow( GetConsoleWindow(), SW_SHOW );
+
 	std::cout << "---WELCOME TO CHESS IN C++!---\n";
 	std::cout << "\nPress any key to continue...\n";
 

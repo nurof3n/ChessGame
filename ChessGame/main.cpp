@@ -2,21 +2,22 @@
 #include "Game.h"
 #include "CustomExcept.h"
 #include <SFML/Graphics.hpp>
+#include <windows.h>
 
 int main() {
-	Game& game = Game::GetInstance();
-	game.Setup();
-	const sf::RenderWindow& window = game.gfx.GetWindow();
 	try {
+		Game& game = Game::GetInstance();
+		game.Setup();
+		const sf::RenderWindow& window = game.gfx.GetWindow();
 		while( window.isOpen() ) {
 			game.Go();
 		}
 	} catch( const CustomExcept & e ) {
-		std::cout << "\n\n" << e.GetType() << ' ' << e.what() << "\n\n";
+		MessageBoxA( nullptr, e.what(), e.GetType(), MB_OK | MB_ICONEXCLAMATION );
 	} catch( const std::exception & e ) {
-		std::cout << "\n\nStandard exception: " << e.what() << "\n\n";
+		MessageBoxA( nullptr, e.what(), "Standard exception", MB_OK | MB_ICONEXCLAMATION );
 	} catch( ... ) {
-		std::cout << "\n\nUnknown exception.\n\n";
+		MessageBoxA( nullptr, "Unknown exception.", "Unknown exception", MB_OK | MB_ICONEXCLAMATION );
 	}
 
 	return 0;

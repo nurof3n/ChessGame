@@ -9,12 +9,12 @@ public:
 		OUT_OF_BOUNDS
 	};
 public:
-	CustomExcept( const char* s ) noexcept {
-		buffer = s;
-	}
+	CustomExcept() = delete;
+	CustomExcept( const char* ) noexcept;
+	CustomExcept( const std::string& ) noexcept;
 	virtual const char* GetType() const noexcept;
 	const char* what() const noexcept override;
 private:
-	std::string buffer;
+	mutable std::string buffer;
 };
 
