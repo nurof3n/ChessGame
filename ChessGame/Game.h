@@ -1,5 +1,6 @@
 #pragma once
 #include "Tabla.h"
+#include "Graphics.h"
 #include <optional>
 
 #define ALB 0
@@ -9,7 +10,7 @@ class Game {
 public:
 	enum class RezMutare {
 		INVALID,
-		NEUTRU,
+		OK,
 		CAPTURA,
 		SAH,
 		MAT
@@ -17,16 +18,15 @@ public:
 private:
 	Game() = default;
 public:
-	static Game& GetInstance();
-	~Game() noexcept;
+	static Game& GetInstance() noexcept;
 	Game( const Game& ) = delete;
 	const Game& operator=( const Game& ) = delete;
 	void Setup() noexcept;
 	void Go();
-	void Draw();
-	std::optional<RezMutare> ProcesareMutare( const std::string&, const std::string& ) noexcept;
+	std::optional<RezMutare> ProcesareMutare( const sf::Vector2u&, const sf::Vector2u& ) noexcept;
+public:
+	static Graphics& gfx;
 private:
-	static Game* _instance;
 	Tabla _tabla;
 	int _player = ALB;
 };

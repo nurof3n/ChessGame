@@ -6,25 +6,20 @@
 #include <thread>
 #include <chrono>
 #include <windows.h>
-#include <limits>
 
 #define SKIP_INTRO
 
 using namespace std::chrono_literals;
 
-Game& Game::GetInstance() {
-	if( _instance == nullptr )
-		_instance = new Game;
-	return *_instance;
-}
+Graphics& Game::gfx = Graphics::GetInstance();
 
-Game::~Game() noexcept {
-	if( _instance != nullptr )
-		delete _instance;
+Game& Game::GetInstance() noexcept {
+	static Game _instance;
+	return _instance;
 }
 
 void Game::Setup() noexcept {
-	std::cout << "---WELCOME TO CHESS IN CONSOLE!---\n";
+	std::cout << "---WELCOME TO CHESS IN C++!---\n";
 	std::cout << "\nPress any key to continue...\n";
 
 	while( !_kbhit() );
@@ -55,39 +50,20 @@ void Game::Setup() noexcept {
 #endif
 
 	_tabla.Setup();
+
+	ShowWindow( GetConsoleWindow(), SW_HIDE );
+	gfx.Setup();
 }
 
 void Game::Go() {
-	system( "cls" );
-	Game::Draw();
-	std::cout << COLOR( _player ) << ", TU ESTI LA MUTARE!\n";
-
-	std::optional<Game::RezMutare> result;
-	do {
-		std::string pos1 = "", pos2 = "";
-		FlushConsoleInputBuffer( GetStdHandle( STD_INPUT_HANDLE ) );
-		std::getline( std::cin, pos1, '\n' );
-		std::getline( std::cin, pos2, '\n' );
-		result = ProcesareMutare( pos1, pos2 );
-		if( !result ) {
-			std::cout << "MUTARE INVALIDA, TRY AGAIN...";
-			std::this_thread::sleep_for( 1s );
-			FlushConsoleInputBuffer( GetStdHandle( STD_INPUT_HANDLE ) );
-			std::cout << "\33[2K\r";	//erases crt line
-			std::cout << "\033[F";		//goes back one line
-			std::cout << "\33[2K\r";	//erases the previous line
-			std::cout << "\033[F";		//goes back one line
-			std::cout << "\33[2K\r";	//erases the previous line
-		}
-
-	} while( !result );
-
-	_player = (_player == ALB ? NEGRU : ALB);
+	int result = gfx.Poll();
+	if( result == -1 )
+		return;
+	gfx.Draw();
+	gfx.Display();
 }
 
-void Game::Draw() {}
-
-std::optional<Game::RezMutare> Game::ProcesareMutare( const std::string& pos1, const std::string& pos2 ) noexcept {
+std::optional<Game::RezMutare> Game::ProcesareMutare( const sf::Vector2u& pos, const sf::Vector2u& newpos ) noexcept {
 
 	return {};
 }

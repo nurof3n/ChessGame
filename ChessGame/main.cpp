@@ -1,14 +1,14 @@
 #include <iostream>
 #include "Game.h"
 #include "CustomExcept.h"
-
-Game* Game::_instance = nullptr;
+#include <SFML/Graphics.hpp>
 
 int main() {
 	Game& game = Game::GetInstance();
 	game.Setup();
+	const sf::RenderWindow& window = game.gfx.GetWindow();
 	try {
-		while( true ) {
+		while( window.isOpen() ) {
 			game.Go();
 		}
 	} catch( const CustomExcept & e ) {
