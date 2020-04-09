@@ -158,12 +158,14 @@
     <ClCompile Include="Game.cpp" />
     <ClCompile Include="Graphics.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Piesa.cpp" />
     <ClCompile Include="Tabla.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CustomExcept.h" />
     <ClInclude Include="Game.h" />
     <ClInclude Include="Graphics.h" />
+    <ClInclude Include="Piesa.h" />
     <ClInclude Include="Tabla.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

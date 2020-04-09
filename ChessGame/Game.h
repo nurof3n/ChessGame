@@ -24,10 +24,11 @@ public:
 	void Setup() noexcept;
 	void Go();
 	std::optional<RezMutare> ProcesareMutare( const sf::Vector2u&, const sf::Vector2u& ) noexcept;
+	static Tabla& GetTabla() noexcept;
 public:
 	static Graphics& gfx;
 private:
-	Tabla _tabla;
+	static Tabla _tabla;
 	int _player = ALB;
 };
 

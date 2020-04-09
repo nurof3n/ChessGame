@@ -70,3 +70,7 @@ std::optional<Game::RezMutare> Game::ProcesareMutare( const sf::Vector2u& pos, c
 	return {};
 }
 
+Tabla& Game::GetTabla() noexcept {
+	return _tabla;
+}
+
