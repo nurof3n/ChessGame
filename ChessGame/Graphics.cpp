@@ -14,14 +14,20 @@ void Graphics::Setup() noexcept {
 	sf::Image icon;
 	icon.loadFromFile( "Content/Icon.png" );
 	window.setIcon( 16, 16, icon.getPixelsPtr() );
+
+	// disable window resize
+	HWND hWnd = window.getSystemHandle();
+	long dwStyle = GetWindowLong( hWnd, GWL_STYLE );
+	dwStyle ^= WS_MAXIMIZEBOX | WS_SIZEBOX;
+	SetWindowLong( hWnd, GWL_STYLE, dwStyle );
 }
 
 void Graphics::Draw() {
 	window.clear();
-	sf::Texture Tabla_tex;
-	Tabla_tex.loadFromFile( "Content/Tabla.png" );
-	sf::Sprite Tabla_spr( Tabla_tex );
-	window.draw( Tabla_spr );
+}
+
+void Graphics::DrawSprite( const sf::Sprite& sprite ) {
+	window.draw( sprite );
 }
 
 int Graphics::Poll() {

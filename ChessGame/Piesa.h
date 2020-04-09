@@ -1,19 +1,28 @@
 #pragma once
-#include <SFML/Graphics.hpp>
-#include "Game.h"
+#include "SpriteObj.h"
 
-class Piesa {
+class Piesa : public SpriteObj {
+public:
+	enum class Piese {
+		LIBER,
+		PION,
+		NEBUN,
+		CAL,
+		TURN,
+		REGINA,
+		REGE
+	};
+	enum class Color {
+		ALB,
+		NEGRU
+	};
 public:
 	Piesa() = delete;
-	Piesa( sf::Vector2u, const std::string& );
-	virtual bool ProcessMove( sf::Vector2u, sf::Vector2u );
-	sf::Vector2f GetPos() noexcept;
-	sf::Texture GetTexture() noexcept;
-	sf::Sprite GetSprite() noexcept;
+	Piesa( const std::string&, sf::Vector2u, const Piese&, const Color& );
+	bool ProcessMove( sf::Vector2u, sf::Vector2u );
+	
 private:
-	sf::Vector2f _pos;
-	sf::Texture _texture;
-	sf::Sprite _sprite;
-	Tabla& _tabla = Game::GetTabla();
+	Piese _type;
+	Color _color;
 };
 

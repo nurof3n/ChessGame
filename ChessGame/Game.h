@@ -1,11 +1,7 @@
 #pragma once
 #include "Tabla.h"
 #include "Graphics.h"
-#include <optional>
 
-#define ALB 0
-#define NEGRU 1
-#define COLOR(x) (x == ALB ? "ALB" : "NEGRU")
 class Game {
 public:
 	enum class RezMutare {
@@ -23,12 +19,9 @@ public:
 	const Game& operator=( const Game& ) = delete;
 	void Setup() noexcept;
 	void Go();
-	std::optional<RezMutare> ProcesareMutare( const sf::Vector2u&, const sf::Vector2u& ) noexcept;
-	static Tabla& GetTabla() noexcept;
 public:
 	static Graphics& gfx;
 private:
-	static Tabla _tabla;
-	int _player = ALB;
+	Tabla _tabla;
 };
 

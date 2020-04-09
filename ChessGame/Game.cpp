@@ -62,15 +62,7 @@ void Game::Go() {
 	if( result == -1 )
 		return;
 	gfx.Draw();
+	_tabla.Draw( gfx );
 	gfx.Display();
-}
-
-std::optional<Game::RezMutare> Game::ProcesareMutare( const sf::Vector2u& pos, const sf::Vector2u& newpos ) noexcept {
-
-	return {};
-}
-
-Tabla& Game::GetTabla() noexcept {
-	return _tabla;
 }
 

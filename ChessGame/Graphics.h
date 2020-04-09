@@ -1,5 +1,6 @@
 #pragma once
 #include <SFML/Graphics.hpp>
+#include <Windows.h>
 
 class Graphics {
 private:
@@ -13,6 +14,7 @@ public:
 	sf::RenderWindow& GetWindow() noexcept;
 	void Setup() noexcept;
 	void Draw();
+	void DrawSprite( const sf::Sprite& );
 	int Poll();
 	void Display();
 private:

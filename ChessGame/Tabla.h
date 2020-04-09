@@ -1,33 +1,16 @@
 #pragma once
-#include <ctype.h>
 #include "CustomExcept.h"
+#include "Piesa.h"
+#include "Graphics.h"
 
-enum class Piese {
-	LIBER = 0,
-	PIONA,
-	NEBUNA,
-	CALA,
-	TURAA,
-	REGINAA,
-	REGEA,
-	PIONN,
-	NEBUNN,
-	CALN,
-	TURAN,
-	REGINAN,
-	REGEN
-};
-class Tabla {
+class Tabla : public SpriteObj {
 public:
-	Tabla() noexcept;
-	bool InBounds( int x, int y ) noexcept;
-	bool InBounds( char c, int y ) noexcept;
-	Piese Get( int x, int y );
-	Piese Get( char c, int y );
-	void Set( int x, int y, Piese piesa );
-	void Set( char c, int y, Piese piesa );
+	Tabla();
+	~Tabla() noexcept;
+
 	void Setup() noexcept;
+	void Draw( Graphics& );
 private:
-	Piese _tabla[8][8];	// albul e sus, negrul e jos
+	Piesa* _tabla[9][9];
 };
 
