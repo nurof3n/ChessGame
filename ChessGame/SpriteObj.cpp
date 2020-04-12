@@ -1,7 +1,7 @@
 #include "SpriteObj.h"
 
-SpriteObj::SpriteObj( const std::string& filename, const sf::Vector2f& coords, const sf::Vector2f& scale ) {
-	_pos = coords;
+SpriteObj::SpriteObj( const std::string& filename, const sf::Vector2f& pos, const sf::Vector2f& scale ) {
+	_pos = pos;
 	_texture.loadFromFile( filename );
 	_sprite.setTexture( _texture );
 	_sprite.setScale( scale );
@@ -22,4 +22,9 @@ sf::Texture SpriteObj::GetTexture() const noexcept {
 
 sf::Sprite SpriteObj::GetSprite() const noexcept {
 	return _sprite;
+}
+
+void SpriteObj::MoveTo( const sf::Vector2f& pos ) noexcept {
+	_sprite.move( pos - _pos );
+	_pos = pos;
 }

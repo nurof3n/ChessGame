@@ -18,7 +18,7 @@ public:
 	Game( const Game& ) = delete;
 	const Game& operator=( const Game& ) = delete;
 	void Setup() noexcept;
-	void Go();
+	void Go( sf::RenderWindow& );
 public:
 	static Graphics& gfx;
 private:

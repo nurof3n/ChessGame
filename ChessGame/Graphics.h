@@ -13,10 +13,11 @@ public:
 
 	sf::RenderWindow& GetWindow() noexcept;
 	void Setup() noexcept;
-	void Draw();
+	void Clear() noexcept;
+	void Draw( const sf::Sprite& );
 	void DrawSprite( const sf::Sprite& );
-	int Poll();
 	void Display();
+	bool IsInWindow( const sf::Vector2f& );
 private:
 	sf::RenderWindow window;
 };

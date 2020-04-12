@@ -34,7 +34,7 @@ void Game::Setup() noexcept {
 	std::string color = "";
 	do {
 		std::cin >> color;
-		std::transform( color.begin(), color.end(), color.begin(), std::tolower );
+		std::transform( color.begin(), color.end(), color.begin(), tolower );
 		if( color != "macarena" )
 			std::cout << "\033[F" << "\33[2K\r";
 	} while( color != "macarena" );
@@ -52,17 +52,55 @@ void Game::Setup() noexcept {
 #endif
 
 	_tabla.Setup();
-
 	ShowWindow( GetConsoleWindow(), SW_HIDE );
 	gfx.Setup();
 }
 
-void Game::Go() {
-	int result = gfx.Poll();
-	if( result == -1 )
-		return;
-	gfx.Draw();
+void Game::Go( sf::RenderWindow& window ) {
+	sf::Event event;
+	while( window.pollEvent( event ) )
+		if( event.type == sf::Event::Closed ) {
+			window.close();
+			return;
+		}
+
+	static sf::Vector2f oldpos;
+	static Piesa* piesa = nullptr;
+	static bool IsLeftMouseHeld = false;
+	if( sf::Mouse::isButtonPressed( sf::Mouse::Left ) ) {
+		auto pos = sf::Vector2f( sf::Mouse::getPosition( window ) );
+		if( !IsLeftMouseHeld ) {			//daca incepe o mutare cu mouseul
+			IsLeftMouseHeld = true;
+			if( gfx.IsInWindow( pos ) ) {	//verificam sa nu fie mouseul in afara ferestrei
+				auto coords = Piesa::GetCoordsFromPos( pos );
+				piesa = _tabla.GetPiesa( coords );
+				if( piesa != nullptr ) {				//daca am apasat pe o piesa, retinem vechea pozitie
+					_tabla.SetPiesa( coords, nullptr );	//scoatem piesa de pe tabla
+					oldpos = piesa->GetPos();
+				}
+			}
+		}
+		if( piesa != nullptr )				//updatam pozitia piesei tinute, daca tinem vreuna
+			piesa->MoveTo( pos - sf::Vector2f( 32.0f, 32.0f ) );
+	} else {
+		if( IsLeftMouseHeld ) {			//daca tocmai s-a terminat o mutare din mouse
+			IsLeftMouseHeld = false;
+			if( piesa != nullptr ) {	//daca am mutat o piesa
+				auto oldcoords = Piesa::GetCoordsFromPos( oldpos );
+				auto coords = Piesa::GetCoordsFromPos( piesa->GetPos() + sf::Vector2f( 32.0f, 32.0f ) );
+				piesa->MoveTo( oldpos );
+				_tabla.SetPiesa( oldcoords, piesa );
+				piesa = nullptr;
+				if( _tabla.CheckMove( oldcoords, coords ) != -1 )	//daca mutarea este buna, o facem
+					_tabla.Move( oldcoords, coords );
+			}
+		}
+	}
+
+	gfx.Clear();
 	_tabla.Draw( gfx );
+	if( piesa != nullptr )
+		gfx.Draw( piesa->GetSprite() );
 	gfx.Display();
 }
 

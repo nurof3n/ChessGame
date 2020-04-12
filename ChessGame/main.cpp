@@ -1,16 +1,13 @@
-#include <iostream>
 #include "Game.h"
 #include "CustomExcept.h"
-#include <SFML/Graphics.hpp>
-#include <windows.h>
 
 int main() {
 	try {
 		Game& game = Game::GetInstance();
 		game.Setup();
-		const sf::RenderWindow& window = game.gfx.GetWindow();
+		sf::RenderWindow& window = game.gfx.GetWindow();
 		while( window.isOpen() ) {
-			game.Go();
+			game.Go( window );
 		}
 	} catch( const CustomExcept & e ) {
 		MessageBoxA( nullptr, e.what(), e.GetType(), MB_OK | MB_ICONEXCLAMATION );

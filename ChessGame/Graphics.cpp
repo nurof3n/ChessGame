@@ -12,8 +12,8 @@ sf::RenderWindow& Graphics::GetWindow() noexcept {
 void Graphics::Setup() noexcept {
 	window.create( sf::VideoMode( 512, 512 ), "ChessGame" );
 	sf::Image icon;
-	icon.loadFromFile( "Content/Icon.png" );
-	window.setIcon( 16, 16, icon.getPixelsPtr() );
+	icon.loadFromFile( "Content/Piese/Cal_negru.png" );
+	window.setIcon( 32, 32, icon.getPixelsPtr() );
 
 	// disable window resize
 	HWND hWnd = window.getSystemHandle();
@@ -22,24 +22,22 @@ void Graphics::Setup() noexcept {
 	SetWindowLong( hWnd, GWL_STYLE, dwStyle );
 }
 
-void Graphics::Draw() {
+void Graphics::Clear() noexcept {
 	window.clear();
+}
+
+void Graphics::Draw( const sf::Sprite& sprite ) {
+	DrawSprite( sprite );
 }
 
 void Graphics::DrawSprite( const sf::Sprite& sprite ) {
 	window.draw( sprite );
 }
 
-int Graphics::Poll() {
-	sf::Event event;
-	while( window.pollEvent( event ) )
-		if( event.type == sf::Event::Closed ) {
-			window.close();
-			return -1;
-		}
-	return 0;
-}
-
 void Graphics::Display() {
 	window.display();
+}
+
+bool Graphics::IsInWindow( const sf::Vector2f& pos ) {
+	return (pos.x >= 0 && pos.x <= window.getSize().x - 1 && pos.y >= 0 && pos.y <= window.getSize().y - 1);
 }

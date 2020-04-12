@@ -163,6 +163,7 @@
     <ClCompile Include="Tabla.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="AndyMath.h" />
     <ClInclude Include="CustomExcept.h" />
     <ClInclude Include="Game.h" />
     <ClInclude Include="Graphics.h" />

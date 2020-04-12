@@ -10,6 +10,7 @@ public:
 	sf::Vector2f GetPos() const noexcept;
 	sf::Texture GetTexture() const noexcept;
 	sf::Sprite GetSprite() const noexcept;
+	void MoveTo( const sf::Vector2f& ) noexcept;
 private:
 	sf::Vector2f _pos;
 	sf::Texture _texture;
