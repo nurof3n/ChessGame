@@ -22,6 +22,7 @@ public:
 	void Setup() noexcept;
 	void Draw( Graphics& );
 	Piesa* GetPiesa( const sf::Vector2i& ) noexcept;
+	sf::Vector2i GetPosRege( const Piesa::Color& ) noexcept;
 	void SetPiesa( const sf::Vector2i&, Piesa* ) noexcept;
 	bool IsInBounds( const sf::Vector2i& ) const noexcept;
 	int CheckMove( const sf::Vector2i&, const sf::Vector2i&, const bool& = false ) const;
@@ -31,6 +32,6 @@ public:
 	bool IsCheckMate( const Piesa::Color&, const sf::Vector2i& ) const noexcept;
 private:
 	Piesa* _tabla[9][9];
-	sf::Vector2i posRegeAlb, posRegeNegru;
+	sf::Vector2i posRege[2];
 };
 

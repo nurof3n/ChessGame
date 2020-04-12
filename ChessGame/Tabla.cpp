@@ -39,9 +39,9 @@ void Tabla::Setup() noexcept {
 	_tabla[8][4] = new Piesa( "Content/Piese/Regina_negru.png", sf::Vector2i( 8u, 4u ), Piesa::Piese::REGINA, Piesa::Color::NEGRU );
 
 	_tabla[1][5] = new Piesa( "Content/Piese/Rege_alb.png", sf::Vector2i( 1u, 5u ), Piesa::Piese::REGE, Piesa::Color::ALB );
-	posRegeAlb = sf::Vector2i( 1, 5 );
+	posRege[0] = sf::Vector2i( 1, 5 );
 	_tabla[8][5] = new Piesa( "Content/Piese/Rege_negru.png", sf::Vector2i( 8u, 5u ), Piesa::Piese::REGE, Piesa::Color::NEGRU );
-	posRegeNegru = sf::Vector2i( 8, 5 );
+	posRege[1] = sf::Vector2i( 8, 5 );
 }
 
 void Tabla::Draw( Graphics& gfx ) {
@@ -54,6 +54,10 @@ void Tabla::Draw( Graphics& gfx ) {
 
 Piesa* Tabla::GetPiesa( const sf::Vector2i& coords ) noexcept {
 	return _tabla[coords.x][coords.y];
+}
+
+sf::Vector2i Tabla::GetPosRege( const Piesa::Color& color ) noexcept {
+	return posRege[( int )color];
 }
 
 void Tabla::SetPiesa( const sf::Vector2i& coords, Piesa* piesa ) noexcept {
@@ -84,11 +88,18 @@ int Tabla::CheckMove( const sf::Vector2i& init, const sf::Vector2i & final, cons
 	}
 
 	int forward = (colorInit == Piesa::Color::ALB ? 1 : -1);
+	int forward2 = 2 * forward;
 	sf::Vector2i movement = final - init;
 	int isHostage = (typeFinal == Piesa::Piese::LIBER ? 0 : 1);
 
 	switch( typeInit ) {
 		case Piesa::Piese::PION:
+			if( (colorInit == Piesa::Color::ALB && init.x == 2) || (colorInit == Piesa::Color::NEGRU && init.x == 7) ) {  // daca pionul se poate muta 2 casute in fata
+				if( movement == sf::Vector2i( forward2, 0 ) )
+					if( typeFinal == Piesa::Piese::LIBER )
+						return isHostage;
+					else return -1;
+			}
 			if( movement == sf::Vector2i( forward, 0 ) )
 				if( typeFinal == Piesa::Piese::LIBER )
 					return isHostage;
@@ -157,6 +168,8 @@ void Tabla::Move( const sf::Vector2i& init, const sf::Vector2i & final ) noexcep
 	delete _tabla[final.x][final.y];
 	_tabla[final.x][final.y] = _tabla[init.x][init.y];
 	_tabla[final.x][final.y]->MoveOnTable( final );
+	if( _tabla[final.x][final.y]->GetType() == Piesa::Piese::REGE )
+		posRege[( int )_tabla[final.x][final.y]->GetColor()] = final;
 	_tabla[init.x][init.y] = nullptr;
 }
 
@@ -176,14 +189,15 @@ bool Tabla::IsCheck( const Piesa::Color& attackingColor, const sf::Vector2i& pos
 }
 
 bool Tabla::IsCheckMate( const Piesa::Color& attackingColor, const sf::Vector2i& posRege ) const noexcept {
-	if( CheckMove( posRege, posRege + sf::Vector2i( 1, 0 ), true ) != -1 ||
-		CheckMove( posRege, posRege + sf::Vector2i( 1, 1 ), true ) != -1 ||
-		CheckMove( posRege, posRege + sf::Vector2i( 1, -1 ), true ) != -1 ||
-		CheckMove( posRege, posRege + sf::Vector2i( -1, 0 ), true ) != -1 ||
-		CheckMove( posRege, posRege + sf::Vector2i( -1, 1 ), true ) != -1 ||
-		CheckMove( posRege, posRege + sf::Vector2i( -1, -1 ), true ) != -1 ||
-		CheckMove( posRege, posRege + sf::Vector2i( 0, 1 ), true ) != -1 ||
-		CheckMove( posRege, posRege + sf::Vector2i( 0, -1 ), true ) != -1 )
-		return false;
-	return true;
+	if( IsCheck( attackingColor, posRege ) &&
+		(CheckMove( posRege, posRege + sf::Vector2i( 1, 0 ) ) == -1 &&
+			CheckMove( posRege, posRege + sf::Vector2i( 1, 1 ) ) == -1 &&
+			CheckMove( posRege, posRege + sf::Vector2i( 1, -1 ) ) == -1 &&
+			CheckMove( posRege, posRege + sf::Vector2i( -1, 0 ) ) == -1 &&
+			CheckMove( posRege, posRege + sf::Vector2i( -1, 1 ) ) == -1 &&
+			CheckMove( posRege, posRege + sf::Vector2i( -1, -1 ) ) == -1 &&
+			CheckMove( posRege, posRege + sf::Vector2i( 0, 1 ) ) == -1 &&
+			CheckMove( posRege, posRege + sf::Vector2i( 0, -1 ) ) == -1) )
+		return true;
+	return false;
 }

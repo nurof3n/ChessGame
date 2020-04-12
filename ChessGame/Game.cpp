@@ -64,38 +64,52 @@ void Game::Go( sf::RenderWindow& window ) {
 			return;
 		}
 
+	static bool IsCheckMate = false;
+	static auto crtColor = Piesa::Color::ALB;
 	static sf::Vector2f oldpos;
 	static Piesa* piesa = nullptr;
 	static bool IsLeftMouseHeld = false;
-	if( sf::Mouse::isButtonPressed( sf::Mouse::Left ) ) {
-		auto pos = sf::Vector2f( sf::Mouse::getPosition( window ) );
-		if( !IsLeftMouseHeld ) {			//daca incepe o mutare cu mouseul
-			IsLeftMouseHeld = true;
-			if( gfx.IsInWindow( pos ) ) {	//verificam sa nu fie mouseul in afara ferestrei
-				auto coords = Piesa::GetCoordsFromPos( pos );
-				piesa = _tabla.GetPiesa( coords );
-				if( piesa != nullptr ) {				//daca am apasat pe o piesa, retinem vechea pozitie
-					_tabla.SetPiesa( coords, nullptr );	//scoatem piesa de pe tabla
-					oldpos = piesa->GetPos();
+
+	if( !IsCheckMate ) {
+		if( sf::Mouse::isButtonPressed( sf::Mouse::Left ) ) {
+			auto pos = sf::Vector2f( sf::Mouse::getPosition( window ) );
+			if( !IsLeftMouseHeld ) {			//daca incepe o mutare cu mouseul
+				IsLeftMouseHeld = true;
+				if( gfx.IsInWindow( pos ) ) {	//verificam sa nu fie mouseul in afara ferestrei
+					auto coords = Piesa::GetCoordsFromPos( pos );
+					piesa = _tabla.GetPiesa( coords );
+					if( piesa != nullptr ) 				//daca am apasat pe o piesa, retinem vechea pozitie
+						if( piesa->GetColor() == crtColor ) {
+							_tabla.SetPiesa( coords, nullptr );	//scoatem piesa de pe tabla
+							oldpos = piesa->GetPos();
+						} else piesa = nullptr;
+				}
+			}
+			if( piesa != nullptr )				//updatam pozitia piesei tinute, daca tinem vreuna
+				piesa->MoveTo( pos - sf::Vector2f( 32.0f, 32.0f ) );
+		} else {
+			if( IsLeftMouseHeld ) {			//daca tocmai s-a terminat o mutare din mouse
+				IsLeftMouseHeld = false;
+				if( piesa != nullptr ) {	//daca am mutat o piesa
+					auto oldcoords = Piesa::GetCoordsFromPos( oldpos );
+					auto coords = Piesa::GetCoordsFromPos( piesa->GetPos() + sf::Vector2f( 32.0f, 32.0f ) );
+					piesa->MoveTo( oldpos );
+					_tabla.SetPiesa( oldcoords, piesa );
+					piesa = nullptr;
+					if( _tabla.CheckMove( oldcoords, coords ) != -1 )
+						if( _tabla.GetPiesa( oldcoords )->GetType() != Piesa::Piese::REGE && _tabla.IsCheck( Piesa::OtherColor( crtColor ), _tabla.GetPosRege( crtColor ) ) );
+						else {
+							_tabla.Move( oldcoords, coords );
+							if( _tabla.IsCheckMate( crtColor, _tabla.GetPosRege( Piesa::OtherColor( crtColor ) ) ) )
+								IsCheckMate = true;
+							crtColor = Piesa::OtherColor( crtColor );
+						}
 				}
 			}
 		}
-		if( piesa != nullptr )				//updatam pozitia piesei tinute, daca tinem vreuna
-			piesa->MoveTo( pos - sf::Vector2f( 32.0f, 32.0f ) );
-	} else {
-		if( IsLeftMouseHeld ) {			//daca tocmai s-a terminat o mutare din mouse
-			IsLeftMouseHeld = false;
-			if( piesa != nullptr ) {	//daca am mutat o piesa
-				auto oldcoords = Piesa::GetCoordsFromPos( oldpos );
-				auto coords = Piesa::GetCoordsFromPos( piesa->GetPos() + sf::Vector2f( 32.0f, 32.0f ) );
-				piesa->MoveTo( oldpos );
-				_tabla.SetPiesa( oldcoords, piesa );
-				piesa = nullptr;
-				if( _tabla.CheckMove( oldcoords, coords ) != -1 )	//daca mutarea este buna, o facem
-					_tabla.Move( oldcoords, coords );
-			}
-		}
 	}
+
+
 
 	gfx.Clear();
 	_tabla.Draw( gfx );
