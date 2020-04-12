@@ -16,7 +16,7 @@ Tabla::~Tabla() noexcept {
 }
 
 void Tabla::Setup() noexcept {
-	for( int j = 1; j <= 8; ++j ) {
+	/*for( int j = 1; j <= 8; ++j ) {
 		_tabla[2][j] = new Piesa( "Content/Piese/Pion_alb.png", sf::Vector2i( 2u, j ), Piesa::Piese::PION, Piesa::Color::ALB );
 		_tabla[7][j] = new Piesa( "Content/Piese/Pion_negru.png", sf::Vector2i( 7u, j ), Piesa::Piese::PION, Piesa::Color::NEGRU );
 	}
@@ -41,7 +41,12 @@ void Tabla::Setup() noexcept {
 	_tabla[1][5] = new Piesa( "Content/Piese/Rege_alb.png", sf::Vector2i( 1u, 5u ), Piesa::Piese::REGE, Piesa::Color::ALB );
 	posRege[0] = sf::Vector2i( 1, 5 );
 	_tabla[8][5] = new Piesa( "Content/Piese/Rege_negru.png", sf::Vector2i( 8u, 5u ), Piesa::Piese::REGE, Piesa::Color::NEGRU );
-	posRege[1] = sf::Vector2i( 8, 5 );
+	posRege[1] = sf::Vector2i( 8, 5 );*/
+	_tabla[1][3] = new Piesa( "Content/Piese/Rege_alb.png", sf::Vector2i( 1, 3 ), Piesa::Piese::REGE, Piesa::Color::ALB );
+	posRege[0] = sf::Vector2i( 1, 3 );
+	_tabla[3][3] = new Piesa( "Content/Piese/Rege_negru.png", sf::Vector2i( 3, 3 ), Piesa::Piese::REGE, Piesa::Color::NEGRU );
+	posRege[1] = sf::Vector2i( 3, 3 );
+	_tabla[2][3] = new Piesa( "Content/Piese/Pion_negru.png", sf::Vector2i( 2, 3 ), Piesa::Piese::PION, Piesa::Color::NEGRU );
 }
 
 void Tabla::Draw( Graphics& gfx ) {
@@ -200,4 +205,15 @@ bool Tabla::IsCheckMate( const Piesa::Color& attackingColor, const sf::Vector2i&
 			CheckMove( posRege, posRege + sf::Vector2i( 0, -1 ) ) == -1) )
 		return true;
 	return false;
+}
+
+bool Tabla::IsStaleMate( const Piesa::Color& defendingColor ) const noexcept {
+	for( int i = 1; i <= 8; ++i )
+		for( int j = 1; j <= 8; ++j )
+			if( _tabla[i][j] != nullptr && _tabla[i][j]->GetColor() == defendingColor )
+				for( int k = 1; k <= 8; ++k )
+					for( int l = 1; l <= 8; ++l )
+						if( CheckMove( _tabla[i][j]->GetCoords(), sf::Vector2i( k, l ) ) )
+							return false;
+	return true;
 }

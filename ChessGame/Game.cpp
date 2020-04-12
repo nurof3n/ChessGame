@@ -65,12 +65,13 @@ void Game::Go( sf::RenderWindow& window ) {
 		}
 
 	static bool IsCheckMate = false;
+	static bool IsStaleMate = false;
 	static auto crtColor = Piesa::Color::ALB;
 	static sf::Vector2f oldpos;
 	static Piesa* piesa = nullptr;
 	static bool IsLeftMouseHeld = false;
 
-	if( !IsCheckMate ) {
+	if( !IsCheckMate && !IsStaleMate ) {
 		if( sf::Mouse::isButtonPressed( sf::Mouse::Left ) ) {
 			auto pos = sf::Vector2f( sf::Mouse::getPosition( window ) );
 			if( !IsLeftMouseHeld ) {			//daca incepe o mutare cu mouseul
@@ -96,14 +97,24 @@ void Game::Go( sf::RenderWindow& window ) {
 					piesa->MoveTo( oldpos );
 					_tabla.SetPiesa( oldcoords, piesa );
 					piesa = nullptr;
-					if( _tabla.CheckMove( oldcoords, coords ) != -1 )
-						if( _tabla.GetPiesa( oldcoords )->GetType() != Piesa::Piese::REGE && _tabla.IsCheck( Piesa::OtherColor( crtColor ), _tabla.GetPosRege( crtColor ) ) );
+					if( _tabla.CheckMove( oldcoords, coords ) != -1 ) {
+						auto piesamutata = _tabla.GetPiesa( oldcoords );
+						auto piesaluata = _tabla.GetPiesa( coords );
+						_tabla.SetPiesa( oldcoords, nullptr );
+						_tabla.SetPiesa( coords, piesamutata );
+						if( piesamutata->GetType() != Piesa::Piese::REGE && _tabla.IsCheck( Piesa::OtherColor( crtColor ), _tabla.GetPosRege( crtColor ) ) );
 						else {
+							_tabla.SetPiesa( oldcoords, piesamutata );
+							_tabla.SetPiesa( coords, piesaluata );
 							_tabla.Move( oldcoords, coords );
 							if( _tabla.IsCheckMate( crtColor, _tabla.GetPosRege( Piesa::OtherColor( crtColor ) ) ) )
 								IsCheckMate = true;
-							crtColor = Piesa::OtherColor( crtColor );
+							else if( _tabla.IsStaleMate( Piesa::OtherColor( crtColor ) ) )
+								IsStaleMate = true;
+							else
+								crtColor = Piesa::OtherColor( crtColor );
 						}
+					}
 				}
 			}
 		}

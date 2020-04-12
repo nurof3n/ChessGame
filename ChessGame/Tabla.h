@@ -30,6 +30,7 @@ public:
 	bool Scan( const sf::Vector2i&, const sf::Vector2i&, const sf::Vector2i& ) const noexcept;
 	bool IsCheck( const Piesa::Color&, const sf::Vector2i& ) const noexcept;
 	bool IsCheckMate( const Piesa::Color&, const sf::Vector2i& ) const noexcept;
+	bool IsStaleMate( const Piesa::Color& ) const noexcept;
 private:
 	Piesa* _tabla[9][9];
 	sf::Vector2i posRege[2];
