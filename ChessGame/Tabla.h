@@ -26,14 +26,16 @@ public:
 	void SetPiesa( const sf::Vector2i&, Piesa* ) noexcept;
 	bool IsInBounds( const sf::Vector2i& ) const noexcept;
 	int VerifyMove( const sf::Vector2i&, const sf::Vector2i& ) const;
-	int VerifyMoveWithCheck( const sf::Vector2i&, const sf::Vector2i&);
+	int VerifyMoveWithCheck( const sf::Vector2i&, const sf::Vector2i& );
 	void Move( const sf::Vector2i&, const sf::Vector2i& ) noexcept;
 	bool Scan( const sf::Vector2i&, const sf::Vector2i&, const sf::Vector2i& ) const noexcept;
 	bool IsCheck( const Piesa::Color&, const sf::Vector2i& ) const noexcept;
 	bool IsCheckMate( const Piesa::Color&, const sf::Vector2i& ) noexcept;
 	bool IsStaleMate( const Piesa::Color& ) noexcept;
+	bool CanBlockCheck( const Piesa::Color& ) noexcept;
 private:
 	Piesa* _tabla[9][9];
 	sf::Vector2i posRege[2];
+	bool regeMoved[2], turnleftMoved[2], turnrightMoved[2];
 };
 

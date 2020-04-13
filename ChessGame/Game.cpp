@@ -109,15 +109,24 @@ void Game::Go( sf::RenderWindow& window ) {
 					piesa->MoveTo( oldpos );
 					_tabla.SetPiesa( oldcoords, piesa );
 					piesa = nullptr;
-					if( _tabla.VerifyMoveWithCheck( oldcoords, coords ) != -1 ) {
+
+					int result;
+					if( (result = _tabla.VerifyMoveWithCheck( oldcoords, coords )) != -1 ) {
 						_tabla.Move( oldcoords, coords );				// aici facem mutarea
+						if( result == 3 )								// daca facem rocada, mutam si tura
+							if( coords.y < 5 )	// rocada la stanga
+								_tabla.Move( sf::Vector2i( coords.x, 1 ), sf::Vector2i( coords.x, coords.y + 1 ) );
+							else				// rocada la dreapta
+								_tabla.Move( sf::Vector2i( coords.x, 8 ), sf::Vector2i( coords.x, coords.y - 1 ) );
 						if( _tabla.IsCheckMate( crtColor, _tabla.GetPosRege( Piesa::OtherColor( crtColor ) ) ) )	// verificam daca am dat mat
 							IsCheckMate = true;
 						else if( _tabla.IsStaleMate( Piesa::OtherColor( crtColor ) ) )								// verificam daca am dat pat
 							IsStaleMate = true;
-						else
-							crtColor = Piesa::OtherColor( crtColor );												// altfel, schimbam randul si continuam jocul 
+						else {
+							if( result == 2 );		// am ajuns cu pionul in capat, putem schimba pentru o piesa la alegere
 
+							crtColor = Piesa::OtherColor( crtColor );												// altfel, schimbam randul si continuam jocul 
+						}
 					}
 				}
 			}
@@ -126,36 +135,17 @@ void Game::Go( sf::RenderWindow& window ) {
 
 
 	gfx.Clear();
+	// desenam tabla cu piesele din casute
 	_tabla.Draw( gfx );
-	if( piesa != nullptr )	// desenam piesa pe care o avem selectata
+	// desenam piesa pe care o avem selectata
+	if( piesa != nullptr )
 		gfx.Draw( piesa->GetSprite() );
-	if( IsCheckMate ) {
-		SpriteObj checkmate( "Content/CheckMate.png" );
+	// endgame
+	if( IsCheckMate || IsStaleMate ) {
+		SpriteObj checkmate( IsCheckMate ? "Content/CheckMate.png" : "Content/StaleMate.png" );
 		gfx.Draw( checkmate.GetSprite() );
 		sf::SoundBuffer soundBuffer;
-		soundBuffer.loadFromFile( "Content/Audio/bomb.wav" );
-		sf::Sound sound( soundBuffer );
-		sound.play();
-		gfx.Display();
-		while( true )
-			while( window.pollEvent( event ) )
-				switch( event.type ) {
-					case sf::Event::Closed:
-						window.close();
-						return;
-						break;
-					case sf::Event::KeyPressed:
-						if( event.key.code == sf::Keyboard::R ) {
-							Restart();
-							return;
-						}
-						break;
-				}
-	} else if( IsStaleMate ) {
-		SpriteObj stalemate( "Content/StaleMate.png" );
-		gfx.Draw( stalemate.GetSprite() );
-		sf::SoundBuffer soundBuffer;
-		soundBuffer.loadFromFile( "Content/Audio/spayed.wav" );
+		soundBuffer.loadFromFile( IsCheckMate ? "Content/Audio/bomb.wav" : "Content/Audio/spayed.wav" );
 		sf::Sound sound( soundBuffer );
 		sound.play();
 		gfx.Display();
@@ -174,6 +164,7 @@ void Game::Go( sf::RenderWindow& window ) {
 						break;
 				}
 	}
+
 	gfx.Display();
 }
 

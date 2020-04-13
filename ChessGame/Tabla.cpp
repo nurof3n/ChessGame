@@ -51,6 +51,10 @@ void Tabla::Setup() noexcept {
 	posRege[0] = sf::Vector2i( 1, 5 );
 	_tabla[8][5] = new Piesa( "Content/Piese/Rege_negru.png", sf::Vector2i( 8u, 5u ), Piesa::Piese::REGE, Piesa::Color::NEGRU );
 	posRege[1] = sf::Vector2i( 8, 5 );
+
+	regeMoved[0] = regeMoved[1] = false;
+	turnleftMoved[0] = turnleftMoved[1] = false;
+	turnrightMoved[0] = turnrightMoved[1] = false;
 }
 
 void Tabla::Draw( Graphics& gfx ) {
@@ -77,6 +81,14 @@ bool Tabla::IsInBounds( const sf::Vector2i& pos ) const noexcept {
 	return (pos.x > 0 && pos.x < 9 && pos.y > 0 && pos.y < 9);
 }
 
+/*
+	return value: (doesn't account for Check, see VerifyMoveWithCheck)
+	 -1 = invalid move
+	 0 = valid move, no capture
+	 1 = valid move, with capture
+	 2 = valid move, pawn reached end of table, can switch
+	 3 = valid move, castling
+*/
 int Tabla::VerifyMove( const sf::Vector2i& init, const sf::Vector2i & final ) const {
 	if( !IsInBounds( final ) )
 		return -1;
@@ -153,8 +165,18 @@ int Tabla::VerifyMove( const sf::Vector2i& init, const sf::Vector2i & final ) co
 			break;
 		case Piesa::Piese::REGE:
 			if( abs( movement.x ) > 1 || abs( movement.y ) > 1 )
-				return -1;
-			if( abs( movement.x ) == abs( movement.y ) )
+				if( !regeMoved[( int )colorInit] )					// rocada
+					if( !turnleftMoved[( int )colorInit] &&
+						movement == sf::Vector2i( 0, -2 ) &&
+						Scan( init, sf::Vector2i( init.x, 1 ), sf::Vector2i( 0, -1 ) ) )
+						return 3;
+					else if( !turnrightMoved[( int )colorInit] &&
+						movement == sf::Vector2i( 0, 2 ) &&
+						Scan( init, sf::Vector2i( init.x, 8 ), sf::Vector2i( 0, 1 ) ) )
+						return 3;
+					else return -1;
+				else return -1;
+			else if( abs( movement.x ) == abs( movement.y ) )
 				return isHostage;
 			else if( movement.x == 0 || movement.y == 0 )
 				return isHostage;
@@ -171,6 +193,15 @@ int Tabla::VerifyMoveWithCheck( const sf::Vector2i& init, const sf::Vector2i & f
 	if( (result = VerifyMove( init, final )) != -1 ) {
 		auto piesamutata = GetPiesa( init );	// mutare temporara, pentru a verifica sa nu ramanem in sah
 		auto piesaluata = GetPiesa( final );
+		// daca facem rocada, verificam conditiile
+		if( result == 3 ) {
+			if( !IsCheck( Piesa::OtherColor( piesamutata->GetColor() ), init ) &&
+				!IsCheck( Piesa::OtherColor( piesamutata->GetColor() ), (init + final) / 2 ) &&
+				!IsCheck( Piesa::OtherColor( piesamutata->GetColor() ), final ) )
+				return 3;
+			else return -1;
+		}
+
 		SetPiesa( init, nullptr );
 		SetPiesa( final, piesamutata );
 		// verificam ca dupa mutare (daca nu mutam regele) sa nu fim in sah
@@ -194,9 +225,17 @@ void Tabla::Move( const sf::Vector2i& init, const sf::Vector2i & final ) noexcep
 	delete _tabla[final.x][final.y];
 	_tabla[final.x][final.y] = _tabla[init.x][init.y];
 	_tabla[final.x][final.y]->MoveOnTable( final );
-	if( _tabla[final.x][final.y]->GetType() == Piesa::Piese::REGE )
-		posRege[( int )_tabla[final.x][final.y]->GetColor()] = final;
 	_tabla[init.x][init.y] = nullptr;
+
+	auto ind = ( int )_tabla[final.x][final.y]->GetColor();
+	if( _tabla[final.x][final.y]->GetType() == Piesa::Piese::REGE ) {
+		posRege[ind] = final;
+		regeMoved[ind] = true;
+	} else if( _tabla[final.x][final.y]->GetType() == Piesa::Piese::TURN )
+		if( !turnleftMoved[ind] && init == sf::Vector2i( (ind == 0 ? 1 : 8), 1 ) )
+			turnleftMoved[ind] = true;
+		else if( !turnrightMoved[ind] && init == sf::Vector2i( (ind == 0 ? 1 : 8), 8 ) )
+			turnrightMoved[ind] = true;
 }
 
 bool Tabla::Scan( const sf::Vector2i& init, const sf::Vector2i & final, const sf::Vector2i& dir ) const noexcept {
@@ -209,21 +248,13 @@ bool Tabla::Scan( const sf::Vector2i& init, const sf::Vector2i & final, const sf
 bool Tabla::IsCheck( const Piesa::Color& attackingColor, const sf::Vector2i& posRege ) const noexcept {
 	for( int i = 1; i <= 8; ++i )
 		for( int j = 1; j <= 8; ++j )
-			if( _tabla[i][j] != nullptr && _tabla[i][j]->GetColor() == attackingColor && VerifyMove( sf::Vector2i( i, j ), posRege ) == 1 )
+			if( _tabla[i][j] != nullptr && _tabla[i][j]->GetColor() == attackingColor && VerifyMove( sf::Vector2i( i, j ), posRege ) != -1 )
 				return true;
 	return false;
 }
 
 bool Tabla::IsCheckMate( const Piesa::Color& attackingColor, const sf::Vector2i& posRege ) noexcept {
-	if( IsCheck( attackingColor, posRege ) &&
-		VerifyMoveWithCheck( posRege, posRege + sf::Vector2i( 1, 0 ) ) == -1 &&
-		VerifyMoveWithCheck( posRege, posRege + sf::Vector2i( 1, 1 ) ) == -1 &&
-		VerifyMoveWithCheck( posRege, posRege + sf::Vector2i( 1, -1 ) ) == -1 &&
-		VerifyMoveWithCheck( posRege, posRege + sf::Vector2i( -1, 0 ) ) == -1 &&
-		VerifyMoveWithCheck( posRege, posRege + sf::Vector2i( -1, 1 ) ) == -1 &&
-		VerifyMoveWithCheck( posRege, posRege + sf::Vector2i( -1, -1 ) ) == -1 &&
-		VerifyMoveWithCheck( posRege, posRege + sf::Vector2i( 0, 1 ) ) == -1 &&
-		VerifyMoveWithCheck( posRege, posRege + sf::Vector2i( 0, -1 ) ) == -1 )
+	if( IsCheck( attackingColor, posRege ) && CanBlockCheck( Piesa::OtherColor( attackingColor ) ) )
 		return true;
 	return false;
 }
@@ -237,4 +268,8 @@ bool Tabla::IsStaleMate( const Piesa::Color& defendingColor ) noexcept {
 						if( VerifyMoveWithCheck( _tabla[i][j]->GetCoords(), sf::Vector2i( k, l ) ) != -1 )
 							return false;
 	return true;
+}
+
+bool Tabla::CanBlockCheck( const Piesa::Color& defendingColor ) noexcept {
+	return IsStaleMate( defendingColor );
 }
