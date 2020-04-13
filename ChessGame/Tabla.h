@@ -21,16 +21,17 @@ public:
 
 	void Setup() noexcept;
 	void Draw( Graphics& );
-	Piesa* GetPiesa( const sf::Vector2i& ) noexcept;
-	sf::Vector2i GetPosRege( const Piesa::Color& ) noexcept;
+	Piesa* GetPiesa( const sf::Vector2i& ) const noexcept;
+	sf::Vector2i GetPosRege( const Piesa::Color& ) const noexcept;
 	void SetPiesa( const sf::Vector2i&, Piesa* ) noexcept;
 	bool IsInBounds( const sf::Vector2i& ) const noexcept;
-	int CheckMove( const sf::Vector2i&, const sf::Vector2i&, const bool& = false ) const;
+	int VerifyMove( const sf::Vector2i&, const sf::Vector2i& ) const;
+	int VerifyMoveWithCheck( const sf::Vector2i&, const sf::Vector2i&);
 	void Move( const sf::Vector2i&, const sf::Vector2i& ) noexcept;
 	bool Scan( const sf::Vector2i&, const sf::Vector2i&, const sf::Vector2i& ) const noexcept;
 	bool IsCheck( const Piesa::Color&, const sf::Vector2i& ) const noexcept;
-	bool IsCheckMate( const Piesa::Color&, const sf::Vector2i& ) const noexcept;
-	bool IsStaleMate( const Piesa::Color& ) const noexcept;
+	bool IsCheckMate( const Piesa::Color&, const sf::Vector2i& ) noexcept;
+	bool IsStaleMate( const Piesa::Color& ) noexcept;
 private:
 	Piesa* _tabla[9][9];
 	sf::Vector2i posRege[2];

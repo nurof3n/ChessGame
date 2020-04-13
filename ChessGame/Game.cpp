@@ -52,25 +52,37 @@ void Game::Setup() noexcept {
 #endif
 
 	_tabla.Setup();
+	crtColor = Piesa::Color::ALB;
+	IsCheck = false;
+	IsCheckMate = _tabla.IsCheckMate( Piesa::OtherColor( crtColor ), _tabla.GetPosRege( crtColor ) );
+	IsStaleMate = _tabla.IsStaleMate( crtColor );
+
 	ShowWindow( GetConsoleWindow(), SW_HIDE );
 	gfx.Setup();
+}
+
+void Game::Restart() noexcept {
+	_tabla.Setup();
+	crtColor = Piesa::Color::ALB;
+	IsCheck = false;
+	IsCheckMate = _tabla.IsCheckMate( Piesa::OtherColor( crtColor ), _tabla.GetPosRege( crtColor ) );
+	IsStaleMate = _tabla.IsStaleMate( crtColor );
 }
 
 void Game::Go( sf::RenderWindow& window ) {
 	sf::Event event;
 	while( window.pollEvent( event ) )
-		if( event.type == sf::Event::Closed ) {
-			window.close();
-			return;
+		switch( event.type ) {
+			case sf::Event::Closed:
+				window.close();
+				return;
 		}
 
-	static bool IsCheckMate = false;
-	static bool IsStaleMate = false;
-	static auto crtColor = Piesa::Color::ALB;
 	static sf::Vector2f oldpos;
 	static Piesa* piesa = nullptr;
 	static bool IsLeftMouseHeld = false;
 
+	IsCheck = false;
 	if( !IsCheckMate && !IsStaleMate ) {
 		if( sf::Mouse::isButtonPressed( sf::Mouse::Left ) ) {
 			auto pos = sf::Vector2f( sf::Mouse::getPosition( window ) );
@@ -97,35 +109,71 @@ void Game::Go( sf::RenderWindow& window ) {
 					piesa->MoveTo( oldpos );
 					_tabla.SetPiesa( oldcoords, piesa );
 					piesa = nullptr;
-					if( _tabla.CheckMove( oldcoords, coords ) != -1 ) {
-						auto piesamutata = _tabla.GetPiesa( oldcoords );
-						auto piesaluata = _tabla.GetPiesa( coords );
-						_tabla.SetPiesa( oldcoords, nullptr );
-						_tabla.SetPiesa( coords, piesamutata );
-						if( piesamutata->GetType() != Piesa::Piese::REGE && _tabla.IsCheck( Piesa::OtherColor( crtColor ), _tabla.GetPosRege( crtColor ) ) );
-						else {
-							_tabla.SetPiesa( oldcoords, piesamutata );
-							_tabla.SetPiesa( coords, piesaluata );
-							_tabla.Move( oldcoords, coords );
-							if( _tabla.IsCheckMate( crtColor, _tabla.GetPosRege( Piesa::OtherColor( crtColor ) ) ) )
-								IsCheckMate = true;
-							else if( _tabla.IsStaleMate( Piesa::OtherColor( crtColor ) ) )
-								IsStaleMate = true;
-							else
-								crtColor = Piesa::OtherColor( crtColor );
-						}
+					if( _tabla.VerifyMoveWithCheck( oldcoords, coords ) != -1 ) {
+						_tabla.Move( oldcoords, coords );				// aici facem mutarea
+						if( _tabla.IsCheckMate( crtColor, _tabla.GetPosRege( Piesa::OtherColor( crtColor ) ) ) )	// verificam daca am dat mat
+							IsCheckMate = true;
+						else if( _tabla.IsStaleMate( Piesa::OtherColor( crtColor ) ) )								// verificam daca am dat pat
+							IsStaleMate = true;
+						else
+							crtColor = Piesa::OtherColor( crtColor );												// altfel, schimbam randul si continuam jocul 
+
 					}
 				}
 			}
 		}
-	}
-
+	} else return;
 
 
 	gfx.Clear();
 	_tabla.Draw( gfx );
-	if( piesa != nullptr )
+	if( piesa != nullptr )	// desenam piesa pe care o avem selectata
 		gfx.Draw( piesa->GetSprite() );
+	if( IsCheckMate ) {
+		SpriteObj checkmate( "Content/CheckMate.png" );
+		gfx.Draw( checkmate.GetSprite() );
+		sf::SoundBuffer soundBuffer;
+		soundBuffer.loadFromFile( "Content/Audio/bomb.wav" );
+		sf::Sound sound( soundBuffer );
+		sound.play();
+		gfx.Display();
+		while( true )
+			while( window.pollEvent( event ) )
+				switch( event.type ) {
+					case sf::Event::Closed:
+						window.close();
+						return;
+						break;
+					case sf::Event::KeyPressed:
+						if( event.key.code == sf::Keyboard::R ) {
+							Restart();
+							return;
+						}
+						break;
+				}
+	} else if( IsStaleMate ) {
+		SpriteObj stalemate( "Content/StaleMate.png" );
+		gfx.Draw( stalemate.GetSprite() );
+		sf::SoundBuffer soundBuffer;
+		soundBuffer.loadFromFile( "Content/Audio/spayed.wav" );
+		sf::Sound sound( soundBuffer );
+		sound.play();
+		gfx.Display();
+		while( true )
+			while( window.pollEvent( event ) )
+				switch( event.type ) {
+					case sf::Event::Closed:
+						window.close();
+						return;
+						break;
+					case sf::Event::KeyPressed:
+						if( event.key.code == sf::Keyboard::R ) {
+							Restart();
+							return;
+						}
+						break;
+				}
+	}
 	gfx.Display();
 }
 
