@@ -9,12 +9,11 @@ sf::RenderWindow& Graphics::GetWindow() noexcept {
 	return window;
 }
 
-void Graphics::Setup() noexcept {
+void Graphics::Setup() {
 	window.create( sf::VideoMode( 512, 512 ), "ChessGame" );
 	sf::Image icon;
 	icon.loadFromFile( "Content/Piese/Cal_negru.png" );
 	window.setIcon( 32, 32, icon.getPixelsPtr() );
-
 	// disable window resize
 	HWND hWnd = window.getSystemHandle();
 	long dwStyle = GetWindowLong( hWnd, GWL_STYLE );

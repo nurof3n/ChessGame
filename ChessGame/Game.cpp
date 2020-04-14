@@ -18,7 +18,7 @@ Game& Game::GetInstance() noexcept {
 	return _instance;
 }
 
-void Game::Setup() noexcept {
+void Game::Setup() {
 	ShowWindow( GetConsoleWindow(), SW_SHOW );
 
 	std::cout << "---WELCOME TO CHESS IN C++!---\n";
@@ -93,7 +93,7 @@ void Game::Go( sf::RenderWindow& window ) {
 					piesa = _tabla.GetPiesa( coords );
 					if( piesa != nullptr ) 				//daca am apasat pe o piesa, retinem vechea pozitie
 						if( piesa->GetColor() == crtColor ) {
-							_tabla.SetPiesa( coords, nullptr );	//scoatem piesa de pe tabla
+							_tabla.SetPointer( coords, nullptr );	//scoatem piesa de pe tabla
 							oldpos = piesa->GetPos();
 						} else piesa = nullptr;
 				}
@@ -107,7 +107,7 @@ void Game::Go( sf::RenderWindow& window ) {
 					auto oldcoords = Piesa::GetCoordsFromPos( oldpos );
 					auto coords = Piesa::GetCoordsFromPos( piesa->GetPos() + sf::Vector2f( 32.0f, 32.0f ) );
 					piesa->MoveTo( oldpos );
-					_tabla.SetPiesa( oldcoords, piesa );
+					_tabla.SetPointer( oldcoords, piesa );
 					piesa = nullptr;
 
 					int result;
@@ -118,15 +118,23 @@ void Game::Go( sf::RenderWindow& window ) {
 								_tabla.Move( sf::Vector2i( coords.x, 1 ), sf::Vector2i( coords.x, coords.y + 1 ) );
 							else				// rocada la dreapta
 								_tabla.Move( sf::Vector2i( coords.x, 8 ), sf::Vector2i( coords.x, coords.y - 1 ) );
+						else if( result == 2 ) {
+							_tabla.Erase( coords );
+							if( coords.x == 1 ) {
+								Piesa* piesa = new Piesa( "Content/Piese/Regina_negru.png", coords, Piesa::Piese::REGINA, Piesa::Color::NEGRU );
+								_tabla.SetPiesa( coords, piesa );
+							} else {
+								Piesa* piesa = new Piesa( "Content/Piese/Regina_alb.png", coords, Piesa::Piese::REGINA, Piesa::Color::ALB );
+								_tabla.SetPiesa( coords, piesa );
+							}
+						}
+
 						if( _tabla.IsCheckMate( crtColor, _tabla.GetPosRege( Piesa::OtherColor( crtColor ) ) ) )	// verificam daca am dat mat
 							IsCheckMate = true;
 						else if( _tabla.IsStaleMate( Piesa::OtherColor( crtColor ) ) )								// verificam daca am dat pat
 							IsStaleMate = true;
-						else {
-							if( result == 2 );		// am ajuns cu pionul in capat, putem schimba pentru o piesa la alegere
-
+						else
 							crtColor = Piesa::OtherColor( crtColor );												// altfel, schimbam randul si continuam jocul 
-						}
 					}
 				}
 			}

@@ -23,7 +23,9 @@ public:
 	void Draw( Graphics& );
 	Piesa* GetPiesa( const sf::Vector2i& ) const noexcept;
 	sf::Vector2i GetPosRege( const Piesa::Color& ) const noexcept;
+	void SetPointer( const sf::Vector2i&, Piesa* ) noexcept;
 	void SetPiesa( const sf::Vector2i&, Piesa* ) noexcept;
+	void Erase( const sf::Vector2i& ) noexcept;
 	bool IsInBounds( const sf::Vector2i& ) const noexcept;
 	int VerifyMove( const sf::Vector2i&, const sf::Vector2i& ) const;
 	int VerifyMoveWithCheck( const sf::Vector2i&, const sf::Vector2i& );

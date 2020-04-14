@@ -18,7 +18,7 @@ public:
 	static Game& GetInstance() noexcept;
 	Game( const Game& ) = delete;
 	const Game& operator=( const Game& ) = delete;
-	void Setup() noexcept;
+	void Setup();
 	void Restart() noexcept;
 	void Go( sf::RenderWindow& );
 public:

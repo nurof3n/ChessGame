@@ -11,19 +11,15 @@ Tabla::Tabla()
 Tabla::~Tabla() noexcept {
 	for( int i = 0; i <= 8; ++i )
 		for( int j = 0; j <= 8; ++j )
-			if( _tabla[i][j] != nullptr ) {
-				delete _tabla[i][j];
-				_tabla[i][j] = nullptr;
-			}
+			if( _tabla[i][j] != nullptr )
+				Erase( { i, j } );
 }
 
 void Tabla::Setup() noexcept {
 	for( int i = 0; i <= 8; ++i )
 		for( int j = 0; j <= 8; ++j )
-			if( _tabla[i][j] != nullptr ) {
-				delete _tabla[i][j];
-				_tabla[i][j] = nullptr;
-			}
+			if( _tabla[i][j] != nullptr )
+				Erase( { i, j } );
 
 	for( int j = 1; j <= 8; ++j ) {
 		_tabla[2][j] = new Piesa( "Content/Piese/Pion_alb.png", sf::Vector2i( 2u, j ), Piesa::Piese::PION, Piesa::Color::ALB );
@@ -73,8 +69,18 @@ sf::Vector2i Tabla::GetPosRege( const Piesa::Color& color ) const noexcept {
 	return posRege[( int )color];
 }
 
-void Tabla::SetPiesa( const sf::Vector2i& coords, Piesa* piesa ) noexcept {
+void Tabla::SetPointer( const sf::Vector2i& coords, Piesa* piesa ) noexcept {
 	_tabla[coords.x][coords.y] = piesa;
+}
+
+void Tabla::SetPiesa( const sf::Vector2i& coords, Piesa* piesa ) noexcept {
+	Erase( coords );
+	_tabla[coords.x][coords.y] = std::move( piesa );
+}
+
+void Tabla::Erase( const sf::Vector2i& coords ) noexcept {
+	delete _tabla[coords.x][coords.y];
+	_tabla[coords.x][coords.y] = nullptr;
 }
 
 bool Tabla::IsInBounds( const sf::Vector2i& pos ) const noexcept {
@@ -86,13 +92,15 @@ bool Tabla::IsInBounds( const sf::Vector2i& pos ) const noexcept {
 	 -1 = invalid move
 	 0 = valid move, no capture
 	 1 = valid move, with capture
-	 2 = valid move, pawn reached end of table, can switch
+	 2 = valid move, with promotion
 	 3 = valid move, castling
 */
 int Tabla::VerifyMove( const sf::Vector2i& init, const sf::Vector2i & final ) const {
 	if( !IsInBounds( final ) )
 		return -1;
 	if( init == final )
+		return -1;
+	if( GetPiesa( init ) == nullptr )
 		return -1;
 
 	Piesa::Piese typeInit = _tabla[init.x][init.y]->GetType(), typeFinal = Piesa::Piese::LIBER;
@@ -193,36 +201,45 @@ int Tabla::VerifyMoveWithCheck( const sf::Vector2i& init, const sf::Vector2i & f
 	if( (result = VerifyMove( init, final )) != -1 ) {
 		auto piesamutata = GetPiesa( init );	// mutare temporara, pentru a verifica sa nu ramanem in sah
 		auto piesaluata = GetPiesa( final );
+		auto type = piesamutata->GetType();
+		auto color = piesamutata->GetColor();
 		// daca facem rocada, verificam conditiile
 		if( result == 3 ) {
-			if( !IsCheck( Piesa::OtherColor( piesamutata->GetColor() ), init ) &&
-				!IsCheck( Piesa::OtherColor( piesamutata->GetColor() ), (init + final) / 2 ) &&
-				!IsCheck( Piesa::OtherColor( piesamutata->GetColor() ), final ) )
+			if( !IsCheck( Piesa::OtherColor( color ), init ) &&
+				!IsCheck( Piesa::OtherColor( color ), (init + final) / 2 ) &&
+				!IsCheck( Piesa::OtherColor( color ), final ) )
 				return 3;
 			else return -1;
 		}
 
-		SetPiesa( init, nullptr );
-		SetPiesa( final, piesamutata );
+		SetPointer( init, nullptr );
+		SetPointer( final, piesamutata );
 		// verificam ca dupa mutare (daca nu mutam regele) sa nu fim in sah
-		if( piesamutata->GetType() != Piesa::Piese::REGE && IsCheck( Piesa::OtherColor( piesamutata->GetColor() ), GetPosRege( piesamutata->GetColor() ) ) ) {
-			SetPiesa( init, piesamutata );
-			SetPiesa( final, piesaluata );
+		if( type != Piesa::Piese::REGE && IsCheck( Piesa::OtherColor( color ), GetPosRege( color ) ) ) {
+			SetPointer( init, piesamutata );
+			SetPointer( final, piesaluata );
 			return -1;
-		} else if( piesamutata->GetType() == Piesa::Piese::REGE && IsCheck( Piesa::OtherColor( piesamutata->GetColor() ), final ) ) {
-			SetPiesa( init, piesamutata );
-			SetPiesa( final, piesaluata );
+		} else if( type == Piesa::Piese::REGE && IsCheck( Piesa::OtherColor( color ), final ) ) {
+			SetPointer( init, piesamutata );
+			SetPointer( final, piesaluata );
 			return -1;
 		} else {
-			SetPiesa( init, piesamutata );
-			SetPiesa( final, piesaluata );
+			SetPointer( init, piesamutata );
+			SetPointer( final, piesaluata );
+			// verificam daca este promotie
+			if( type == Piesa::Piese::PION )
+				if( color == Piesa::Color::ALB && final.x == 8 )
+					return 2;
+				else if( color == Piesa::Color::NEGRU && final.x == 1 )
+					return 2;
+
 			return result;
 		}
 	} else return -1;
 }
 
 void Tabla::Move( const sf::Vector2i& init, const sf::Vector2i & final ) noexcept {
-	delete _tabla[final.x][final.y];
+	Erase( final );
 	_tabla[final.x][final.y] = _tabla[init.x][init.y];
 	_tabla[final.x][final.y]->MoveOnTable( final );
 	_tabla[init.x][init.y] = nullptr;

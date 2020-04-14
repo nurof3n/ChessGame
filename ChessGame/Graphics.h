@@ -1,6 +1,7 @@
 #pragma once
 #include <SFML/Graphics.hpp>
 #include <Windows.h>
+#include "CustomExcept.h"
 
 class Graphics {
 private:
@@ -12,7 +13,7 @@ public:
 	const Graphics& operator=( const Graphics& ) = delete;
 
 	sf::RenderWindow& GetWindow() noexcept;
-	void Setup() noexcept;
+	void Setup();
 	void Clear() noexcept;
 	void Draw( const sf::Sprite& );
 	void DrawSprite( const sf::Sprite& );
