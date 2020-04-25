@@ -168,8 +168,15 @@
     <ClInclude Include="Game.h" />
     <ClInclude Include="Graphics.h" />
     <ClInclude Include="Piesa.h" />
+    <ClInclude Include="resource.h" />
     <ClInclude Include="SpriteObj.h" />
     <ClInclude Include="Tabla.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="ChessGame.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="Content\Icon.ico" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

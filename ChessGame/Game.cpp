@@ -47,7 +47,7 @@ void Game::Setup() {
 	std::this_thread::sleep_for( 2s );
 	std::cout << "ESTI SIGUR CA NU VREI SA IESI?...\n";
 	std::this_thread::sleep_for( 2s );
-	std::cout << "IMEDIAT TERMIN BEREA SI VIN...\n";
+	std::cout << "NU SUNT RESPONSABIL PENTRU VICTIME...\n";
 	std::this_thread::sleep_for( 2s );
 #endif
 
