@@ -53,8 +53,7 @@ void Tabla::Setup() noexcept {
 	turnrightMoved[0] = turnrightMoved[1] = false;
 }
 
-void Tabla::Draw( Graphics& gfx ) {
-	gfx.DrawSprite( GetSprite() );
+void Tabla::DrawPiese( Graphics& gfx ) {
 	for( int i = 1; i <= 8; ++i )
 		for( int j = 1; j <= 8; ++j )
 			if( _tabla[i][j] != nullptr )

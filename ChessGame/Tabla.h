@@ -28,7 +28,7 @@ public:
 	~Tabla() noexcept;
 
 	void Setup() noexcept;
-	void Draw( Graphics& );
+	void DrawPiese( Graphics& );
 	Piesa* GetPiesa( const sf::Vector2i& ) const noexcept;
 	sf::Vector2i GetPosRege( const Piesa::Color& ) const noexcept;
 	void SetPointer( const sf::Vector2i&, Piesa* ) noexcept;

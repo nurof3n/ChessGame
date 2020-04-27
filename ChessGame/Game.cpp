@@ -85,6 +85,9 @@ void Game::Go( sf::RenderWindow& window ) {
 	static Piesa* piesa = nullptr;
 	static bool IsLeftMouseHeld = false;
 
+	static SpriteObj* patratInit = nullptr;
+	static SpriteObj* patratFinal = nullptr;
+
 	IsCheck = false;
 	if( !IsCheckMate && !IsStaleMate ) {
 		if( sf::Mouse::isButtonPressed( sf::Mouse::Left ) ) {
@@ -117,6 +120,13 @@ void Game::Go( sf::RenderWindow& window ) {
 					if( (moveType = _tabla.VerifyMoveWithCheck( oldcoords, coords )) != 0 ) {
 						LogMove( oldcoords, coords, moveType );					// mai intai inregistram mutarea!
 
+						if( patratInit == nullptr )
+							patratInit = new SpriteObj( "Content/Patrat_initial.png", { 0,0 }, { 2.0,2.0 } );
+						if( patratFinal == nullptr )
+							patratFinal = new SpriteObj( "Content/Patrat_final.png", { 0,0 }, { 2.0,2.0 } );
+						patratInit->MoveTo( Piesa::GetPosFromCoords( oldcoords ) );
+						patratFinal->MoveTo( Piesa::GetPosFromCoords( coords ) );
+
 						_tabla.Move( oldcoords, coords );						// aici facem mutarea
 						if( moveType & MV_CASTLING )								// rocada
 							if( coords.x < 5 )		// rocada la stanga
@@ -140,8 +150,7 @@ void Game::Go( sf::RenderWindow& window ) {
 						} else if( _tabla.IsInCheck( Piesa::OtherColor( crtColor ) ) ) {
 							WriteLog( "+" );
 							crtColor = Piesa::OtherColor( crtColor );
-						}
-						else if( _tabla.IsInStaleMate( Piesa::OtherColor( crtColor ) ) ) {
+						} else if( _tabla.IsInStaleMate( Piesa::OtherColor( crtColor ) ) ) {
 							IsStaleMate = true;
 							WriteLog( "1/2-1/2" );
 						} else
@@ -154,8 +163,15 @@ void Game::Go( sf::RenderWindow& window ) {
 
 
 	gfx.Clear();
-	// desenam tabla cu piesele din casute
-	_tabla.Draw( gfx );
+	// desenam tabla
+	gfx.Draw( _tabla.GetSprite() );
+	// coloram patratelul din care am mutat si cel in care am mutat
+	if( patratInit != nullptr )
+		gfx.Draw( patratInit->GetSprite() );
+	if( patratFinal != nullptr )
+		gfx.Draw( patratFinal->GetSprite() );
+	// desenam piesele de pe tabla
+	_tabla.DrawPiese( gfx );
 	// desenam piesa pe care o avem selectata
 	if( piesa != nullptr )
 		gfx.Draw( piesa->GetSprite() );
