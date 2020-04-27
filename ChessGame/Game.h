@@ -22,7 +22,8 @@ public:
 	void Setup();
 	void Restart() noexcept;
 	void Go( sf::RenderWindow& );
-	static void LogMove( Piesa::Piese pieceType, sf::Vector2i oldcoords, sf::Vector2i coords, int moveType );
+	void LogMove( sf::Vector2i oldcoords, sf::Vector2i coords, int moveType );
+	void WriteLog( std::string output );
 public:
 	static Graphics& gfx;
 private:
@@ -33,6 +34,6 @@ private:
 	bool IsCheckMate = false;
 	bool IsStaleMate = false;
 	std::string pgnFilename = "lastmatch.pgn";
-	std::ofstream output;
+	std::ofstream pgnOutput;
 };
 

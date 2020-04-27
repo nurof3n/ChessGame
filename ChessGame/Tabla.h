@@ -18,6 +18,9 @@ constexpr auto H = 8;
 #define MV_CAPTURE		0x2
 #define MV_PROMOTION	0x4
 #define MV_CASTLING		0x8
+#define MV_CHECK		0x10
+#define MV_CHECKMATE	0x20
+#define MV_STALEMATE	0x40
 
 class Tabla : public SpriteObj {
 public:
@@ -36,11 +39,14 @@ public:
 	int VerifyMoveWithCheck( const sf::Vector2i&, const sf::Vector2i& );
 	void Move( const sf::Vector2i&, const sf::Vector2i& ) noexcept;
 	bool Scan( const sf::Vector2i&, const sf::Vector2i&, const sf::Vector2i& ) const noexcept;
-	bool IsCheck( Piesa::Color ) const noexcept;
-	bool IsCheckMate( Piesa::Color ) noexcept;
-	bool IsStaleMate( Piesa::Color ) noexcept;
-	bool CanMove( Piesa::Color color, sf::Vector2i coords = { 0, 0 }, Piesa::Piese type = Piesa::Piese::LIBER ) noexcept;
-	bool IsAttacking( Piesa::Color, sf::Vector2i ) const noexcept;
+	bool IsCheck( Piesa::Color ) const;
+	bool IsCheckMate( Piesa::Color );
+	bool IsStaleMate( Piesa::Color );
+	bool CanMove( Piesa::Color color, sf::Vector2i coords = { 0, 0 }, Piesa::Piese type = Piesa::Piese::LIBER );
+	bool IsAttacking( Piesa::Color, sf::Vector2i ) const;
+	std::string GetMoveString( sf::Vector2i oldcoords, sf::Vector2i coords, int moveType );
+	static std::string GetFileLetter( int x );
+	static std::string GetRankLetter( int y );
 private:
 	Piesa* _tabla[9][9];
 	sf::Vector2i posRege[2];

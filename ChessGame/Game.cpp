@@ -57,7 +57,7 @@ void Game::Setup() {
 	IsCheck = false;
 	IsCheckMate = _tabla.IsCheckMate( Piesa::OtherColor( crtColor ) );
 	IsStaleMate = _tabla.IsStaleMate( crtColor );
-	output.open( pgnFilename );
+	pgnOutput.open( pgnFilename );
 
 	ShowWindow( GetConsoleWindow(), SW_HIDE );
 	gfx.Setup();
@@ -66,6 +66,7 @@ void Game::Setup() {
 void Game::Restart() noexcept {
 	_tabla.Setup();
 	crtColor = Piesa::Color::ALB;
+	round = 0;
 	IsCheck = false;
 	IsCheckMate = _tabla.IsCheckMate( Piesa::OtherColor( crtColor ) );
 	IsStaleMate = _tabla.IsStaleMate( crtColor );
@@ -112,15 +113,17 @@ void Game::Go( sf::RenderWindow& window ) {
 					_tabla.SetPointer( oldcoords, piesa );
 					piesa = nullptr;
 
-					int result;
-					if( (result = _tabla.VerifyMoveWithCheck( oldcoords, coords )) != 0 ) {
+					int moveType;
+					if( (moveType = _tabla.VerifyMoveWithCheck( oldcoords, coords )) != 0 ) {
+						LogMove( oldcoords, coords, moveType );					// mai intai inregistram mutarea!
+
 						_tabla.Move( oldcoords, coords );						// aici facem mutarea
-						if( result & MV_CASTLING )								// rocada
+						if( moveType & MV_CASTLING )								// rocada
 							if( coords.x < 5 )		// rocada la stanga
 								_tabla.Move( sf::Vector2i( 1, coords.y ), sf::Vector2i( coords.x + 1, coords.y ) );
 							else					// rocada la dreapta
 								_tabla.Move( sf::Vector2i( 8, coords.y ), sf::Vector2i( coords.x - 1, coords.y ) );
-						else if( result & MV_PROMOTION ) {						// promotie
+						else if( moveType & MV_PROMOTION ) {						// promotie
 							_tabla.Erase( coords );
 							if( coords.y == 1 ) {
 								Piesa* piesa = new Piesa( "Content/Piese/Regina_negru.png", coords, Piesa::Piese::REGINA, Piesa::Color::NEGRU );
@@ -131,12 +134,16 @@ void Game::Go( sf::RenderWindow& window ) {
 							}
 						}
 
-						if( _tabla.IsCheckMate( crtColor ) )	// verificam daca am dat mat
+						if( _tabla.IsCheckMate( crtColor ) ) {
 							IsCheckMate = true;
-						else if( _tabla.IsStaleMate( Piesa::OtherColor( crtColor ) ) )								// verificam daca am dat pat
+							WriteLog( crtColor == Piesa::Color::ALB ? "# 1-0" : "# 0-1" );
+						} else if( _tabla.IsCheck( Piesa::OtherColor( crtColor ) ) )
+							WriteLog( "+" );
+						else if( _tabla.IsStaleMate( Piesa::OtherColor( crtColor ) ) ) {
 							IsStaleMate = true;
-						else
-							crtColor = Piesa::OtherColor( crtColor );												// altfel, schimbam randul si continuam jocul 
+							WriteLog( "1/2-1/2" );
+						} else
+							crtColor = Piesa::OtherColor( crtColor );
 					}
 				}
 			}
@@ -178,26 +185,16 @@ void Game::Go( sf::RenderWindow& window ) {
 	gfx.Display();
 }
 
-void Game::LogMove( Piesa::Piese pieceType, sf::Vector2i oldcoords, sf::Vector2i coords, int moveType ) {
-	/*std::string moveString = Tabla::GetMoveString( Piesa::Piese pieceType, sf::Vector2i oldcoords, sf::Vector2i coords, int moveType );
+void Game::LogMove( sf::Vector2i oldcoords, sf::Vector2i coords, int moveType ) {
+	std::string moveString = _tabla.GetMoveString( oldcoords, coords, moveType );
+	auto color = _tabla.GetPiesa( oldcoords )->GetColor();
 
-	switch( pieceType ) {
-		case Piesa::Piese::CAL:
-			moveString += "N";
-			break;
-		case Piesa::Piese::NEBUN:
-			moveString += "B";
-			break;
-		case Piesa::Piese::TURN:
-			moveString += "R";
-			break;
-		case Piesa::Piese::REGINA:
-			moveString += "Q";
-			break;
-		case Piesa::Piese::REGE:
-			moveString += "K";
-			break;
-	}
-	bool ambiguu = false*/
+	if( color == Piesa::Color::ALB )
+		pgnOutput << ' ' << ++round << '.';
+	pgnOutput << ' ' << moveString;
+}
+
+void Game::WriteLog( std::string output ) {
+	pgnOutput << output;
 }
 

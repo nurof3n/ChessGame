@@ -191,18 +191,18 @@ int Tabla::VerifyMove( const sf::Vector2i& init, const sf::Vector2i & final ) co
 }
 
 int Tabla::VerifyMoveWithCheck( const sf::Vector2i& init, const sf::Vector2i & final ) {
-	int result;
-	if( (result = VerifyMove( init, final )) != 0 ) {
+	int moveType;
+	if( (moveType = VerifyMove( init, final )) != 0 ) {
 		auto piesamutata = GetPiesa( init );	// mutare temporara, pentru a verifica sa nu ramanem in sah
 		auto piesaluata = GetPiesa( final );
 		auto type = piesamutata->GetType();
 		auto color = piesamutata->GetColor();
 		// daca facem rocada, verificam conditiile
-		if( result & MV_CASTLING ) {
+		if( moveType & MV_CASTLING ) {
 			if( !IsAttacking( Piesa::OtherColor( color ), init ) &&
 				!IsAttacking( Piesa::OtherColor( color ), (init + final) / 2 ) &&
 				!IsAttacking( Piesa::OtherColor( color ), final ) )
-				return result;
+				return moveType;
 			else return 0;
 		}
 
@@ -223,11 +223,11 @@ int Tabla::VerifyMoveWithCheck( const sf::Vector2i& init, const sf::Vector2i & f
 			// verificam daca este promotie
 			if( type == Piesa::Piese::PION )
 				if( color == Piesa::Color::ALB && final.y == 8 )
-					return result | MV_PROMOTION;
+					return moveType | MV_PROMOTION;
 				else if( color == Piesa::Color::NEGRU && final.y == 1 )
-					return result | MV_PROMOTION;
+					return moveType | MV_PROMOTION;
 
-			return result;
+			return moveType;
 		}
 	} else return 0;
 }
@@ -256,21 +256,21 @@ bool Tabla::Scan( const sf::Vector2i& init, const sf::Vector2i & final, const sf
 	return true;
 }
 
-bool Tabla::IsCheck( Piesa::Color attackingColor ) const noexcept {
+bool Tabla::IsCheck( Piesa::Color attackingColor ) const {
 	return IsAttacking( attackingColor, posRege[( int )Piesa::OtherColor( attackingColor )] );
 }
 
-bool Tabla::IsCheckMate( Piesa::Color attackingColor ) noexcept {
+bool Tabla::IsCheckMate( Piesa::Color attackingColor ) {
 	if( IsCheck( attackingColor ) && !CanMove( Piesa::OtherColor( attackingColor ) ) )
 		return true;
 	return false;
 }
 
-bool Tabla::IsStaleMate( Piesa::Color defendingColor ) noexcept {
+bool Tabla::IsStaleMate( Piesa::Color defendingColor ) {
 	return !CanMove( defendingColor );
 }
 
-bool Tabla::CanMove( Piesa::Color color, sf::Vector2i coords, Piesa::Piese type ) noexcept {
+bool Tabla::CanMove( Piesa::Color color, sf::Vector2i coords, Piesa::Piese type ) {
 	for( int i = 1; i <= 8; ++i )
 		for( int j = 1; j <= 8; ++j )
 			if( _tabla[i][j] != nullptr && _tabla[i][j]->GetColor() == color && (type == Piesa::Piese::LIBER || _tabla[i][j]->GetType() == type) )
@@ -284,10 +284,81 @@ bool Tabla::CanMove( Piesa::Color color, sf::Vector2i coords, Piesa::Piese type 
 				return false;
 }
 
-bool Tabla::IsAttacking( Piesa::Color attackingColor, sf::Vector2i coords ) const noexcept {
+bool Tabla::IsAttacking( Piesa::Color attackingColor, sf::Vector2i coords ) const {
 	for( int i = 1; i <= 8; ++i )
 		for( int j = 1; j <= 8; ++j )
 			if( _tabla[i][j] != nullptr && _tabla[i][j]->GetColor() == attackingColor && VerifyMove( sf::Vector2i( i, j ), coords ) != 0 )
 				return true;
 	return false;
+}
+
+std::string Tabla::GetMoveString( sf::Vector2i oldcoords, sf::Vector2i coords, int moveType ) {
+	std::string moveString;
+	if( moveType == MV_CASTLING )
+		return oldcoords.x < coords.x ? "O-O-O" : "O-O";
+
+	auto piece = _tabla[oldcoords.x][oldcoords.y];
+	Piesa::Piese type = piece->GetType();
+	Piesa::Color color = piece->GetColor();
+	switch( type ) {
+		case Piesa::Piese::CAL:
+			moveString += "N";
+			break;
+		case Piesa::Piese::NEBUN:
+			moveString += "B";
+			break;
+		case Piesa::Piese::TURN:
+			moveString += "R";
+			break;
+		case Piesa::Piese::REGINA:
+			moveString += "Q";
+			break;
+		case Piesa::Piese::REGE:
+			moveString += "K";
+			break;
+	}
+
+	bool isAmbiguous = false;
+	bool diffRank = true,	// .y
+		diffFile = true;	// .x
+	for( int i = 1; i <= 8; ++i )
+		for( int j = 1; j <= 8; ++j )
+			if( _tabla[i][j] != nullptr && _tabla[i][j]->GetColor() == color && _tabla[i][j]->GetType() == type && VerifyMoveWithCheck( { i, j }, coords ) != 0 )
+				if( i != oldcoords.x || j != oldcoords.y ) {
+					isAmbiguous = true;
+					if( i == oldcoords.x )
+						diffFile = false;
+					if( j == oldcoords.y )
+						diffRank = false;
+				}
+
+	if( isAmbiguous )
+		if( diffFile )
+			moveString += GetFileLetter( oldcoords.x );
+		else if( diffRank )
+			moveString += GetRankLetter( oldcoords.y );
+		else
+			moveString += GetFileLetter( oldcoords.x ) + GetRankLetter( oldcoords.y );
+
+	if( moveType & MV_CAPTURE ) {
+		if( type == Piesa::Piese::PION )
+			moveString += GetFileLetter( oldcoords.x );
+		moveString += "x";
+	}
+
+
+	moveString += GetFileLetter( coords.x ) + GetRankLetter( coords.y );
+
+	if( moveType & MV_PROMOTION )
+		moveString += "=Q";
+
+	return moveString;
+}
+
+std::string Tabla::GetFileLetter( int x ) {
+	return std::string( 1, x + 'a' - 1 );
+}
+
+std::string Tabla::GetRankLetter( int y ) {
+	return std::string( 1, y + '0' );
 }
