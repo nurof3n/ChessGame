@@ -55,8 +55,8 @@ void Game::Setup() {
 	crtColor = Piesa::Color::ALB;
 	round = 0;
 	IsCheck = false;
-	IsCheckMate = _tabla.IsCheckMate( Piesa::OtherColor( crtColor ) );
-	IsStaleMate = _tabla.IsStaleMate( crtColor );
+	IsCheckMate = _tabla.IsInCheckMate( crtColor );
+	IsStaleMate = _tabla.IsInStaleMate( crtColor );
 	pgnOutput.open( pgnFilename );
 
 	ShowWindow( GetConsoleWindow(), SW_HIDE );
@@ -68,8 +68,8 @@ void Game::Restart() noexcept {
 	crtColor = Piesa::Color::ALB;
 	round = 0;
 	IsCheck = false;
-	IsCheckMate = _tabla.IsCheckMate( Piesa::OtherColor( crtColor ) );
-	IsStaleMate = _tabla.IsStaleMate( crtColor );
+	IsCheckMate = _tabla.IsInCheckMate( crtColor );
+	IsStaleMate = _tabla.IsInStaleMate( crtColor );
 }
 
 void Game::Go( sf::RenderWindow& window ) {
@@ -134,12 +134,14 @@ void Game::Go( sf::RenderWindow& window ) {
 							}
 						}
 
-						if( _tabla.IsCheckMate( crtColor ) ) {
+						if( _tabla.IsInCheckMate( Piesa::OtherColor( crtColor ) ) ) {
 							IsCheckMate = true;
 							WriteLog( crtColor == Piesa::Color::ALB ? "# 1-0" : "# 0-1" );
-						} else if( _tabla.IsCheck( Piesa::OtherColor( crtColor ) ) )
+						} else if( _tabla.IsInCheck( Piesa::OtherColor( crtColor ) ) ) {
 							WriteLog( "+" );
-						else if( _tabla.IsStaleMate( Piesa::OtherColor( crtColor ) ) ) {
+							crtColor = Piesa::OtherColor( crtColor );
+						}
+						else if( _tabla.IsInStaleMate( Piesa::OtherColor( crtColor ) ) ) {
 							IsStaleMate = true;
 							WriteLog( "1/2-1/2" );
 						} else

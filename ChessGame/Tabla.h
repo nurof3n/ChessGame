@@ -39,9 +39,9 @@ public:
 	int VerifyMoveWithCheck( const sf::Vector2i&, const sf::Vector2i& );
 	void Move( const sf::Vector2i&, const sf::Vector2i& ) noexcept;
 	bool Scan( const sf::Vector2i&, const sf::Vector2i&, const sf::Vector2i& ) const noexcept;
-	bool IsCheck( Piesa::Color ) const;
-	bool IsCheckMate( Piesa::Color );
-	bool IsStaleMate( Piesa::Color );
+	bool IsInCheck( Piesa::Color defendingColor ) const;
+	bool IsInCheckMate( Piesa::Color defendingColor );
+	bool IsInStaleMate( Piesa::Color defendingColor );
 	bool CanMove( Piesa::Color color, sf::Vector2i coords = { 0, 0 }, Piesa::Piese type = Piesa::Piese::LIBER );
 	bool IsAttacking( Piesa::Color, sf::Vector2i ) const;
 	std::string GetMoveString( sf::Vector2i oldcoords, sf::Vector2i coords, int moveType );

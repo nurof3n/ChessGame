@@ -209,7 +209,7 @@ int Tabla::VerifyMoveWithCheck( const sf::Vector2i& init, const sf::Vector2i & f
 		SetPointer( init, nullptr );
 		SetPointer( final, piesamutata );
 		// verificam ca dupa mutare (daca nu mutam regele) sa nu fim in sah
-		if( type != Piesa::Piese::REGE && IsCheck( Piesa::OtherColor( color ) ) ) {
+		if( type != Piesa::Piese::REGE && IsInCheck( color ) ) {
 			SetPointer( init, piesamutata );
 			SetPointer( final, piesaluata );
 			return 0;
@@ -256,17 +256,17 @@ bool Tabla::Scan( const sf::Vector2i& init, const sf::Vector2i & final, const sf
 	return true;
 }
 
-bool Tabla::IsCheck( Piesa::Color attackingColor ) const {
-	return IsAttacking( attackingColor, posRege[( int )Piesa::OtherColor( attackingColor )] );
+bool Tabla::IsInCheck( Piesa::Color defendingColor ) const {
+	return IsAttacking( Piesa::OtherColor( defendingColor ), posRege[int( defendingColor )] );
 }
 
-bool Tabla::IsCheckMate( Piesa::Color attackingColor ) {
-	if( IsCheck( attackingColor ) && !CanMove( Piesa::OtherColor( attackingColor ) ) )
+bool Tabla::IsInCheckMate( Piesa::Color defendingColor ) {
+	if( IsInCheck( defendingColor ) && !CanMove( defendingColor ) )
 		return true;
 	return false;
 }
 
-bool Tabla::IsStaleMate( Piesa::Color defendingColor ) {
+bool Tabla::IsInStaleMate( Piesa::Color defendingColor ) {
 	return !CanMove( defendingColor );
 }
 
