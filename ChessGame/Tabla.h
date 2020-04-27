@@ -14,6 +14,11 @@ constexpr auto F = 6;
 constexpr auto G = 7;
 constexpr auto H = 8;
 
+#define MV_VALID		0x1
+#define MV_CAPTURE		0x2
+#define MV_PROMOTION	0x4
+#define MV_CASTLING		0x8
+
 class Tabla : public SpriteObj {
 public:
 	Tabla();
@@ -31,10 +36,11 @@ public:
 	int VerifyMoveWithCheck( const sf::Vector2i&, const sf::Vector2i& );
 	void Move( const sf::Vector2i&, const sf::Vector2i& ) noexcept;
 	bool Scan( const sf::Vector2i&, const sf::Vector2i&, const sf::Vector2i& ) const noexcept;
-	bool IsCheck( const Piesa::Color&, const sf::Vector2i& ) const noexcept;
-	bool IsCheckMate( const Piesa::Color&, const sf::Vector2i& ) noexcept;
-	bool IsStaleMate( const Piesa::Color& ) noexcept;
-	bool CanBlockCheck( const Piesa::Color& ) noexcept;
+	bool IsCheck( Piesa::Color ) const noexcept;
+	bool IsCheckMate( Piesa::Color ) noexcept;
+	bool IsStaleMate( Piesa::Color ) noexcept;
+	bool CanMove( Piesa::Color color, sf::Vector2i coords = { 0, 0 }, Piesa::Piese type = Piesa::Piese::LIBER ) noexcept;
+	bool IsAttacking( Piesa::Color, sf::Vector2i ) const noexcept;
 private:
 	Piesa* _tabla[9][9];
 	sf::Vector2i posRege[2];

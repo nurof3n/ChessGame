@@ -22,31 +22,31 @@ void Tabla::Setup() noexcept {
 				Erase( { i, j } );
 
 	for( int j = 1; j <= 8; ++j ) {
-		_tabla[2][j] = new Piesa( "Content/Piese/Pion_alb.png", sf::Vector2i( 2u, j ), Piesa::Piese::PION, Piesa::Color::ALB );
-		_tabla[7][j] = new Piesa( "Content/Piese/Pion_negru.png", sf::Vector2i( 7u, j ), Piesa::Piese::PION, Piesa::Color::NEGRU );
+		_tabla[j][2] = new Piesa( "Content/Piese/Pion_alb.png", sf::Vector2i( j, 2 ), Piesa::Piese::PION, Piesa::Color::ALB );
+		_tabla[j][7] = new Piesa( "Content/Piese/Pion_negru.png", sf::Vector2i( j, 7 ), Piesa::Piese::PION, Piesa::Color::NEGRU );
 	}
-	_tabla[1][1] = new Piesa( "Content/Piese/Turn_alb.png", sf::Vector2i( 1u, 1u ), Piesa::Piese::TURN, Piesa::Color::ALB );
-	_tabla[1][8] = new Piesa( "Content/Piese/Turn_alb.png", sf::Vector2i( 1u, 8u ), Piesa::Piese::TURN, Piesa::Color::ALB );
-	_tabla[8][1] = new Piesa( "Content/Piese/Turn_negru.png", sf::Vector2i( 8u, 1u ), Piesa::Piese::TURN, Piesa::Color::NEGRU );
-	_tabla[8][8] = new Piesa( "Content/Piese/Turn_negru.png", sf::Vector2i( 8u, 8u ), Piesa::Piese::TURN, Piesa::Color::NEGRU );
+	_tabla[1][1] = new Piesa( "Content/Piese/Turn_alb.png", sf::Vector2i( 1, 1 ), Piesa::Piese::TURN, Piesa::Color::ALB );
+	_tabla[8][1] = new Piesa( "Content/Piese/Turn_alb.png", sf::Vector2i( 8, 1 ), Piesa::Piese::TURN, Piesa::Color::ALB );
+	_tabla[1][8] = new Piesa( "Content/Piese/Turn_negru.png", sf::Vector2i( 1, 8 ), Piesa::Piese::TURN, Piesa::Color::NEGRU );
+	_tabla[8][8] = new Piesa( "Content/Piese/Turn_negru.png", sf::Vector2i( 8, 8 ), Piesa::Piese::TURN, Piesa::Color::NEGRU );
 
-	_tabla[1][2] = new Piesa( "Content/Piese/Cal_alb.png", sf::Vector2i( 1u, 2u ), Piesa::Piese::CAL, Piesa::Color::ALB );
-	_tabla[1][7] = new Piesa( "Content/Piese/Cal_alb.png", sf::Vector2i( 1u, 7u ), Piesa::Piese::CAL, Piesa::Color::ALB );
-	_tabla[8][2] = new Piesa( "Content/Piese/Cal_negru.png", sf::Vector2i( 8u, 2u ), Piesa::Piese::CAL, Piesa::Color::NEGRU );
-	_tabla[8][7] = new Piesa( "Content/Piese/Cal_negru.png", sf::Vector2i( 8u, 7u ), Piesa::Piese::CAL, Piesa::Color::NEGRU );
+	_tabla[2][1] = new Piesa( "Content/Piese/Cal_alb.png", sf::Vector2i( 2, 1 ), Piesa::Piese::CAL, Piesa::Color::ALB );
+	_tabla[7][1] = new Piesa( "Content/Piese/Cal_alb.png", sf::Vector2i( 7, 1 ), Piesa::Piese::CAL, Piesa::Color::ALB );
+	_tabla[2][8] = new Piesa( "Content/Piese/Cal_negru.png", sf::Vector2i( 2, 8 ), Piesa::Piese::CAL, Piesa::Color::NEGRU );
+	_tabla[7][8] = new Piesa( "Content/Piese/Cal_negru.png", sf::Vector2i( 7, 8 ), Piesa::Piese::CAL, Piesa::Color::NEGRU );
 
-	_tabla[1][3] = new Piesa( "Content/Piese/Nebun_alb.png", sf::Vector2i( 1u, 3u ), Piesa::Piese::NEBUN, Piesa::Color::ALB );
-	_tabla[1][6] = new Piesa( "Content/Piese/Nebun_alb.png", sf::Vector2i( 1u, 6u ), Piesa::Piese::NEBUN, Piesa::Color::ALB );
-	_tabla[8][3] = new Piesa( "Content/Piese/Nebun_negru.png", sf::Vector2i( 8u, 3u ), Piesa::Piese::NEBUN, Piesa::Color::NEGRU );
-	_tabla[8][6] = new Piesa( "Content/Piese/Nebun_negru.png", sf::Vector2i( 8u, 6u ), Piesa::Piese::NEBUN, Piesa::Color::NEGRU );
+	_tabla[3][1] = new Piesa( "Content/Piese/Nebun_alb.png", sf::Vector2i( 3, 1 ), Piesa::Piese::NEBUN, Piesa::Color::ALB );
+	_tabla[6][1] = new Piesa( "Content/Piese/Nebun_alb.png", sf::Vector2i( 6, 1 ), Piesa::Piese::NEBUN, Piesa::Color::ALB );
+	_tabla[3][8] = new Piesa( "Content/Piese/Nebun_negru.png", sf::Vector2i( 3, 8 ), Piesa::Piese::NEBUN, Piesa::Color::NEGRU );
+	_tabla[6][8] = new Piesa( "Content/Piese/Nebun_negru.png", sf::Vector2i( 6, 8 ), Piesa::Piese::NEBUN, Piesa::Color::NEGRU );
 
-	_tabla[1][4] = new Piesa( "Content/Piese/Regina_alb.png", sf::Vector2i( 1u, 4u ), Piesa::Piese::REGINA, Piesa::Color::ALB );
-	_tabla[8][4] = new Piesa( "Content/Piese/Regina_negru.png", sf::Vector2i( 8u, 4u ), Piesa::Piese::REGINA, Piesa::Color::NEGRU );
+	_tabla[4][1] = new Piesa( "Content/Piese/Regina_alb.png", sf::Vector2i( 4, 1 ), Piesa::Piese::REGINA, Piesa::Color::ALB );
+	_tabla[4][8] = new Piesa( "Content/Piese/Regina_negru.png", sf::Vector2i( 4, 8 ), Piesa::Piese::REGINA, Piesa::Color::NEGRU );
 
-	_tabla[1][5] = new Piesa( "Content/Piese/Rege_alb.png", sf::Vector2i( 1u, 5u ), Piesa::Piese::REGE, Piesa::Color::ALB );
-	posRege[0] = sf::Vector2i( 1, 5 );
-	_tabla[8][5] = new Piesa( "Content/Piese/Rege_negru.png", sf::Vector2i( 8u, 5u ), Piesa::Piese::REGE, Piesa::Color::NEGRU );
-	posRege[1] = sf::Vector2i( 8, 5 );
+	_tabla[5][1] = new Piesa( "Content/Piese/Rege_alb.png", sf::Vector2i( 5, 1 ), Piesa::Piese::REGE, Piesa::Color::ALB );
+	posRege[0] = sf::Vector2i( 5, 1 );
+	_tabla[5][8] = new Piesa( "Content/Piese/Rege_negru.png", sf::Vector2i( 5, 8 ), Piesa::Piese::REGE, Piesa::Color::NEGRU );
+	posRege[1] = sf::Vector2i( 5, 8 );
 
 	regeMoved[0] = regeMoved[1] = false;
 	turnleftMoved[0] = turnleftMoved[1] = false;
@@ -87,21 +87,15 @@ bool Tabla::IsInBounds( const sf::Vector2i& pos ) const noexcept {
 	return (pos.x > 0 && pos.x < 9 && pos.y > 0 && pos.y < 9);
 }
 
-/*
-	return value: (doesn't account for Check, see VerifyMoveWithCheck)
-	 -1 = invalid move
-	 0 = valid move, no capture
-	 1 = valid move, with capture
-	 2 = valid move, with promotion
-	 3 = valid move, castling
-*/
+
+//	returns 0 if the move is invalid. (doesn't account for Check, see VerifyMoveWithCheck)
 int Tabla::VerifyMove( const sf::Vector2i& init, const sf::Vector2i & final ) const {
 	if( !IsInBounds( final ) )
-		return -1;
+		return 0;
 	if( init == final )
-		return -1;
+		return 0;
 	if( GetPiesa( init ) == nullptr )
-		return -1;
+		return 0;
 
 	Piesa::Piese typeInit = _tabla[init.x][init.y]->GetType(), typeFinal = Piesa::Piese::LIBER;
 	Piesa::Color colorInit = _tabla[init.x][init.y]->GetColor(), colorFinal;
@@ -110,132 +104,132 @@ int Tabla::VerifyMove( const sf::Vector2i& init, const sf::Vector2i & final ) co
 		typeFinal = _tabla[final.x][final.y]->GetType();
 		colorFinal = _tabla[final.x][final.y]->GetColor();
 		if( colorFinal == colorInit )
-			return -1;
+			return 0;
 	}
 
 	int forward = (colorInit == Piesa::Color::ALB ? 1 : -1);
 	int forward2 = 2 * forward;
 	sf::Vector2i movement = final - init;
-	int isHostage = (typeFinal == Piesa::Piese::LIBER ? 0 : 1);
+	int captureFlag = (typeFinal == Piesa::Piese::LIBER ? 0 : MV_CAPTURE);
 
 	switch( typeInit ) {
 		case Piesa::Piese::PION:
-			if( (colorInit == Piesa::Color::ALB && init.x == 2) || (colorInit == Piesa::Color::NEGRU && init.x == 7) ) {  // daca pionul se poate muta 2 casute in fata
-				if( movement == sf::Vector2i( forward2, 0 ) )
+			if( (colorInit == Piesa::Color::ALB && init.y == 2) || (colorInit == Piesa::Color::NEGRU && init.y == 7) ) {  // daca pionul se poate muta 2 casute in fata
+				if( movement == sf::Vector2i( 0, forward2 ) )
 					if( typeFinal == Piesa::Piese::LIBER )
-						return isHostage;
-					else return -1;
+						return MV_VALID | captureFlag;
+					else return 0;
 			}
-			if( movement == sf::Vector2i( forward, 0 ) )
+			if( movement == sf::Vector2i( 0, forward ) )
 				if( typeFinal == Piesa::Piese::LIBER )
-					return isHostage;
-				else return -1;
+					return MV_VALID | captureFlag;
+				else return 0;
 			else
-				if( movement == sf::Vector2i( forward, 1 ) || movement == sf::Vector2i( forward, -1 ) )
+				if( movement == sf::Vector2i( 1, forward ) || movement == sf::Vector2i( -1, forward ) )
 					if( typeFinal != Piesa::Piese::LIBER )
-						return isHostage;
-					else return -1;
-				else return -1;
+						return MV_VALID | captureFlag;
+					else return 0;
+				else return 0;
 			break;
 		case Piesa::Piese::CAL:
 			if( (abs( movement.x ) == 2 && abs( movement.y ) == 1) || (abs( movement.x ) == 1 && abs( movement.y ) == 2) )
-				return isHostage;
-			else return -1;
+				return MV_VALID | captureFlag;
+			else return 0;
 			break;
 		case Piesa::Piese::NEBUN:
 			if( abs( movement.x ) == abs( movement.y ) ) {
 				sf::Vector2i pas = movement / abs( movement.x );
 				if( !Scan( init, final, pas ) )
-					return -1;
-				return isHostage;
-			} else return -1;
+					return 0;
+				return MV_VALID | captureFlag;
+			} else return 0;
 			break;
 		case Piesa::Piese::TURN:
 			if( movement.x == 0 || movement.y == 0 ) {
 				sf::Vector2i pas = static_cast< sf::Vector2i >(sfm::getNormalized( movement ));
 				if( !Scan( init, final, pas ) )
-					return -1;
-				return isHostage;
-			} else return -1;
+					return 0;
+				return MV_VALID | captureFlag;
+			} else return 0;
 			break;
 		case Piesa::Piese::REGINA:
 			if( abs( movement.x ) == abs( movement.y ) ) {
 				sf::Vector2i pas = movement / abs( movement.x );
 				if( !Scan( init, final, pas ) )
-					return -1;
-				return isHostage;
+					return 0;
+				return MV_VALID | captureFlag;
 			} else if( movement.x == 0 || movement.y == 0 ) {
 				sf::Vector2i pas = static_cast< sf::Vector2i >(sfm::getNormalized( movement ));
 				if( !Scan( init, final, pas ) )
-					return -1;
-				return isHostage;
-			} else return -1;
+					return 0;
+				return MV_VALID | captureFlag;
+			} else return 0;
 			break;
 		case Piesa::Piese::REGE:
 			if( abs( movement.x ) > 1 || abs( movement.y ) > 1 )
 				if( !regeMoved[( int )colorInit] )					// rocada
-					if( !turnleftMoved[( int )colorInit] &&
-						movement == sf::Vector2i( 0, -2 ) &&
-						Scan( init, sf::Vector2i( init.x, 1 ), sf::Vector2i( 0, -1 ) ) )
-						return 3;
-					else if( !turnrightMoved[( int )colorInit] &&
-						movement == sf::Vector2i( 0, 2 ) &&
-						Scan( init, sf::Vector2i( init.x, 8 ), sf::Vector2i( 0, 1 ) ) )
-						return 3;
-					else return -1;
-				else return -1;
+					if( movement == sf::Vector2i( -2, 0 ) &&
+						!turnleftMoved[( int )colorInit] &&
+						Scan( init, sf::Vector2i( 1, init.y ), sf::Vector2i( -1, 0 ) ) )
+						return MV_VALID | MV_CASTLING;
+					else if( movement == sf::Vector2i( 2, 0 ) &&
+						!turnrightMoved[( int )colorInit] &&
+						Scan( init, sf::Vector2i( 8, init.y ), sf::Vector2i( 1, 0 ) ) )
+						return MV_VALID | MV_CASTLING;
+					else return 0;
+				else return 0;
 			else if( abs( movement.x ) == abs( movement.y ) )
-				return isHostage;
+				return MV_VALID | captureFlag;
 			else if( movement.x == 0 || movement.y == 0 )
-				return isHostage;
-			else return -1;
+				return MV_VALID | captureFlag;
+			else return 0;
 			break;
 		default:
-			return -1;
+			return 0;
 			break;
 	}
 }
 
 int Tabla::VerifyMoveWithCheck( const sf::Vector2i& init, const sf::Vector2i & final ) {
 	int result;
-	if( (result = VerifyMove( init, final )) != -1 ) {
+	if( (result = VerifyMove( init, final )) != 0 ) {
 		auto piesamutata = GetPiesa( init );	// mutare temporara, pentru a verifica sa nu ramanem in sah
 		auto piesaluata = GetPiesa( final );
 		auto type = piesamutata->GetType();
 		auto color = piesamutata->GetColor();
 		// daca facem rocada, verificam conditiile
-		if( result == 3 ) {
-			if( !IsCheck( Piesa::OtherColor( color ), init ) &&
-				!IsCheck( Piesa::OtherColor( color ), (init + final) / 2 ) &&
-				!IsCheck( Piesa::OtherColor( color ), final ) )
-				return 3;
-			else return -1;
+		if( result & MV_CASTLING ) {
+			if( !IsAttacking( Piesa::OtherColor( color ), init ) &&
+				!IsAttacking( Piesa::OtherColor( color ), (init + final) / 2 ) &&
+				!IsAttacking( Piesa::OtherColor( color ), final ) )
+				return result;
+			else return 0;
 		}
 
 		SetPointer( init, nullptr );
 		SetPointer( final, piesamutata );
 		// verificam ca dupa mutare (daca nu mutam regele) sa nu fim in sah
-		if( type != Piesa::Piese::REGE && IsCheck( Piesa::OtherColor( color ), GetPosRege( color ) ) ) {
+		if( type != Piesa::Piese::REGE && IsCheck( Piesa::OtherColor( color ) ) ) {
 			SetPointer( init, piesamutata );
 			SetPointer( final, piesaluata );
-			return -1;
-		} else if( type == Piesa::Piese::REGE && IsCheck( Piesa::OtherColor( color ), final ) ) {
+			return 0;
+		} else if( type == Piesa::Piese::REGE && IsAttacking( Piesa::OtherColor( color ), final ) ) {
 			SetPointer( init, piesamutata );
 			SetPointer( final, piesaluata );
-			return -1;
+			return 0;
 		} else {
 			SetPointer( init, piesamutata );
 			SetPointer( final, piesaluata );
 			// verificam daca este promotie
 			if( type == Piesa::Piese::PION )
-				if( color == Piesa::Color::ALB && final.x == 8 )
-					return 2;
-				else if( color == Piesa::Color::NEGRU && final.x == 1 )
-					return 2;
+				if( color == Piesa::Color::ALB && final.y == 8 )
+					return result | MV_PROMOTION;
+				else if( color == Piesa::Color::NEGRU && final.y == 1 )
+					return result | MV_PROMOTION;
 
 			return result;
 		}
-	} else return -1;
+	} else return 0;
 }
 
 void Tabla::Move( const sf::Vector2i& init, const sf::Vector2i & final ) noexcept {
@@ -249,9 +243,9 @@ void Tabla::Move( const sf::Vector2i& init, const sf::Vector2i & final ) noexcep
 		posRege[ind] = final;
 		regeMoved[ind] = true;
 	} else if( _tabla[final.x][final.y]->GetType() == Piesa::Piese::TURN )
-		if( !turnleftMoved[ind] && init == sf::Vector2i( (ind == 0 ? 1 : 8), 1 ) )
+		if( !turnleftMoved[ind] && init == sf::Vector2i( 1, (ind == 0 ? 1 : 8) ) )
 			turnleftMoved[ind] = true;
-		else if( !turnrightMoved[ind] && init == sf::Vector2i( (ind == 0 ? 1 : 8), 8 ) )
+		else if( !turnrightMoved[ind] && init == sf::Vector2i( 8, (ind == 0 ? 1 : 8) ) )
 			turnrightMoved[ind] = true;
 }
 
@@ -262,31 +256,38 @@ bool Tabla::Scan( const sf::Vector2i& init, const sf::Vector2i & final, const sf
 	return true;
 }
 
-bool Tabla::IsCheck( const Piesa::Color& attackingColor, const sf::Vector2i& posRege ) const noexcept {
-	for( int i = 1; i <= 8; ++i )
-		for( int j = 1; j <= 8; ++j )
-			if( _tabla[i][j] != nullptr && _tabla[i][j]->GetColor() == attackingColor && VerifyMove( sf::Vector2i( i, j ), posRege ) != -1 )
-				return true;
-	return false;
+bool Tabla::IsCheck( Piesa::Color attackingColor ) const noexcept {
+	return IsAttacking( attackingColor, posRege[( int )Piesa::OtherColor( attackingColor )] );
 }
 
-bool Tabla::IsCheckMate( const Piesa::Color& attackingColor, const sf::Vector2i& posRege ) noexcept {
-	if( IsCheck( attackingColor, posRege ) && CanBlockCheck( Piesa::OtherColor( attackingColor ) ) )
+bool Tabla::IsCheckMate( Piesa::Color attackingColor ) noexcept {
+	if( IsCheck( attackingColor ) && !CanMove( Piesa::OtherColor( attackingColor ) ) )
 		return true;
 	return false;
 }
 
-bool Tabla::IsStaleMate( const Piesa::Color& defendingColor ) noexcept {
-	for( int i = 1; i <= 8; ++i )
-		for( int j = 1; j <= 8; ++j )
-			if( _tabla[i][j] != nullptr && _tabla[i][j]->GetColor() == defendingColor )
-				for( int k = 1; k <= 8; ++k )
-					for( int l = 1; l <= 8; ++l )
-						if( VerifyMoveWithCheck( _tabla[i][j]->GetCoords(), sf::Vector2i( k, l ) ) != -1 )
-							return false;
-	return true;
+bool Tabla::IsStaleMate( Piesa::Color defendingColor ) noexcept {
+	return !CanMove( defendingColor );
 }
 
-bool Tabla::CanBlockCheck( const Piesa::Color& defendingColor ) noexcept {
-	return IsStaleMate( defendingColor );
+bool Tabla::CanMove( Piesa::Color color, sf::Vector2i coords, Piesa::Piese type ) noexcept {
+	for( int i = 1; i <= 8; ++i )
+		for( int j = 1; j <= 8; ++j )
+			if( _tabla[i][j] != nullptr && _tabla[i][j]->GetColor() == color && (type == Piesa::Piese::LIBER || _tabla[i][j]->GetType() == type) )
+				if( coords == sf::Vector2i( 0, 0 ) ) {
+					for( int k = 1; k <= 8; ++k )
+						for( int l = 1; l <= 8; ++l )
+							if( VerifyMoveWithCheck( _tabla[i][j]->GetCoords(), sf::Vector2i( k, l ) ) != 0 )
+								return true;
+				} else if( VerifyMoveWithCheck( _tabla[i][j]->GetCoords(), coords ) != 0 )
+					return true;
+				return false;
+}
+
+bool Tabla::IsAttacking( Piesa::Color attackingColor, sf::Vector2i coords ) const noexcept {
+	for( int i = 1; i <= 8; ++i )
+		for( int j = 1; j <= 8; ++j )
+			if( _tabla[i][j] != nullptr && _tabla[i][j]->GetColor() == attackingColor && VerifyMove( sf::Vector2i( i, j ), coords ) != 0 )
+				return true;
+	return false;
 }

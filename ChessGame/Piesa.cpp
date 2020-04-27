@@ -8,11 +8,11 @@ Piesa::Piesa( const std::string& filename, sf::Vector2i coords, const Piese& typ
 	_color( color ) {}
 
 sf::Vector2f Piesa::GetPosFromCoords( const sf::Vector2i& coords ) noexcept {
-	return 64.0f * sf::Vector2f( coords.y - 1.0f, 8.0f - coords.x );
+	return 64.0f * sf::Vector2f( coords.x - 1, 8 - coords.y );
 }
 
 sf::Vector2i Piesa::GetCoordsFromPos( const sf::Vector2f& pos ) noexcept {
-	return sf::Vector2i( 8.0f - int( pos.y / 64.0f ), int( pos.x / 64.0f ) + 1.0f );
+	return sf::Vector2i( int( pos.x / 64.0f ) + 1.0f, 8.0f - int( pos.y / 64.0f ) );
 }
 
 Piesa::Color Piesa::OtherColor( const Color& color ) noexcept {

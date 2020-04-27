@@ -2,6 +2,7 @@
 #include "Tabla.h"
 #include "Graphics.h"
 #include <SFML/Audio.hpp>
+#include <fstream>
 
 class Game {
 public:
@@ -21,13 +22,17 @@ public:
 	void Setup();
 	void Restart() noexcept;
 	void Go( sf::RenderWindow& );
+	static void LogMove( Piesa::Piese pieceType, sf::Vector2i oldcoords, sf::Vector2i coords, int moveType );
 public:
 	static Graphics& gfx;
 private:
 	Tabla _tabla;
-	Piesa::Color crtColor;
-	bool IsCheck;
-	bool IsCheckMate;
-	bool IsStaleMate;
+	Piesa::Color crtColor = Piesa::Color::ALB;
+	int round = 0;
+	bool IsCheck = false;
+	bool IsCheckMate = false;
+	bool IsStaleMate = false;
+	std::string pgnFilename = "lastmatch.pgn";
+	std::ofstream output;
 };
 
