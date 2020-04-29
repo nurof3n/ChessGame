@@ -70,6 +70,8 @@ void Game::Restart() noexcept {
 	IsCheck = false;
 	IsCheckMate = _tabla.IsInCheckMate( crtColor );
 	IsStaleMate = _tabla.IsInStaleMate( crtColor );
+	pgnOutput.close();
+	pgnOutput.open( pgnFilename );
 }
 
 void Game::Go( sf::RenderWindow& window ) {
@@ -194,6 +196,10 @@ void Game::Go( sf::RenderWindow& window ) {
 					case sf::Event::KeyPressed:
 						if( event.key.code == sf::Keyboard::R ) {
 							Restart();
+							delete patratFinal;
+							patratFinal = nullptr;
+							delete patratInit;
+							patratInit = nullptr;
 							return;
 						}
 						break;
