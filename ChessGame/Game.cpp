@@ -91,6 +91,7 @@ void Game::Go( sf::RenderWindow& window ) {
 	static SpriteObj* patratFinal = nullptr;
 
 	IsCheck = false;
+
 	if( !IsCheckMate && !IsStaleMate ) {
 		if( sf::Mouse::isButtonPressed( sf::Mouse::Left ) ) {
 			auto pos = sf::Vector2f( sf::Mouse::getPosition( window ) );
@@ -182,7 +183,8 @@ void Game::Go( sf::RenderWindow& window ) {
 		SpriteObj checkmate( IsCheckMate ? "Content/CheckMate.png" : "Content/StaleMate.png" );
 		gfx.Draw( checkmate.GetSprite() );
 		sf::SoundBuffer soundBuffer;
-		soundBuffer.loadFromFile( IsCheckMate ? "Content/Audio/bomb.wav" : "Content/Audio/spayed.wav" );
+		if( !soundBuffer.loadFromFile( IsCheckMate ? "Content/Audio/bomb.wav" : "Content/Audio/spayed.wav" ) )
+			throw CustomExcept( "Cannot load file: " + IsCheckMate ? "Content/Audio/bomb.wav" : "Content/Audio/spayed.wav" );
 		sf::Sound sound( soundBuffer );
 		gfx.Display();
 		sound.play();

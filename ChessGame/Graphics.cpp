@@ -1,4 +1,5 @@
 #include "Graphics.h"
+#include "CustomExcept.h"
 
 Graphics& Graphics::GetInstance() noexcept {
 	static Graphics _instance;
@@ -12,7 +13,8 @@ sf::RenderWindow& Graphics::GetWindow() noexcept {
 void Graphics::Setup() {
 	window.create( sf::VideoMode( 512, 512 ), "ChessGame" );
 	sf::Image icon;
-	icon.loadFromFile( "Content/Icon.png" );
+	if( !icon.loadFromFile( "Content/Icon.png" ) )
+		throw CustomExcept( "Cannot load file: Content/Icon.png" );
 	window.setIcon( 16, 16, icon.getPixelsPtr() );
 	// disable window resize
 	HWND hWnd = window.getSystemHandle();

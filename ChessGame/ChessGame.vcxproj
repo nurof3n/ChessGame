@@ -154,6 +154,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Button.cpp" />
     <ClCompile Include="CustomExcept.cpp" />
     <ClCompile Include="Game.cpp" />
     <ClCompile Include="Graphics.cpp" />
@@ -164,6 +165,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AndyMath.h" />
+    <ClInclude Include="Button.h" />
     <ClInclude Include="CustomExcept.h" />
     <ClInclude Include="Game.h" />
     <ClInclude Include="Graphics.h" />

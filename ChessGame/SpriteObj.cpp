@@ -2,7 +2,8 @@
 
 SpriteObj::SpriteObj( const std::string& filename, const sf::Vector2f& pos, const sf::Vector2f& scale ) {
 	_pos = pos;
-	_texture.loadFromFile( filename );
+	if( !_texture.loadFromFile( filename ) )
+		throw("Cannot load file: " + filename);
 	_sprite.setTexture( _texture );
 	_sprite.setScale( scale );
 	_sprite.move( _pos );

@@ -5,10 +5,6 @@
 
 class CustomExcept : public std::exception {
 public:
-	enum class Except {
-		OUT_OF_BOUNDS
-	};
-public:
 	CustomExcept() = delete;
 	CustomExcept( const char* ) noexcept;
 	CustomExcept( const std::string& ) noexcept;
