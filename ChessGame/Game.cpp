@@ -1,4 +1,5 @@
 #include "Game.h"
+#include "Button.h"
 #include <iostream>
 #include <algorithm>
 #include <string>
@@ -18,6 +19,7 @@ Game& Game::GetInstance() noexcept {
 	return _instance;
 }
 
+// remember to initialize the variables here
 void Game::Setup() {
 	ShowWindow( GetConsoleWindow(), SW_SHOW );
 
@@ -54,45 +56,72 @@ void Game::Setup() {
 	_tabla.Setup();
 	crtColor = Piesa::Color::ALB;
 	round = 0;
+	IsStarted = false;
 	IsCheck = false;
-	IsCheckMate = _tabla.IsInCheckMate( crtColor );
-	IsStaleMate = _tabla.IsInStaleMate( crtColor );
+	IsCheckMate = false;
+	IsStaleMate = false;
 	pgnOutput.open( pgnFilename );
 
 	ShowWindow( GetConsoleWindow(), SW_HIDE );
 	gfx.Setup();
 }
-
+// remember to reinitialize variables here
 void Game::Restart() noexcept {
 	_tabla.Setup();
 	crtColor = Piesa::Color::ALB;
 	round = 0;
 	IsCheck = false;
-	IsCheckMate = _tabla.IsInCheckMate( crtColor );
-	IsStaleMate = _tabla.IsInStaleMate( crtColor );
+	IsCheckMate = false;
+	IsStaleMate = false;
 	pgnOutput.close();
 	pgnOutput.open( pgnFilename );
 }
 
+void Game::GoMenu() {
+	static Button buttonPlaySingle( SpriteObj( "Content/PlayButtonSingle.png", { 256.0f, 200.0f } ) );
+	static Button buttonPlayMulti( SpriteObj( "Content/PlayButtonMulti.png", { 256.0f, 300.0f } ) );
+	gfx.Draw( buttonPlaySingle.GetSprite() );
+	if( buttonPlaySingle.IsPressed() )
+		IsStarted = true;
+	gfx.Display();
+}
+
 void Game::Go( sf::RenderWindow& window ) {
+	static SpriteObj* patratInit = nullptr;
+	static SpriteObj* patratFinal = nullptr;
+	static sf::Sound endSound;
+
 	sf::Event event;
 	while( window.pollEvent( event ) )
 		switch( event.type ) {
 			case sf::Event::Closed:
 				window.close();
 				return;
+			case sf::Event::KeyPressed:
+				if( event.key.code == sf::Keyboard::R && (IsCheckMate || IsStaleMate) ) {
+					endSound.stop();
+					Restart();
+					delete patratFinal;
+					patratFinal = nullptr;
+					delete patratInit;
+					patratInit = nullptr;
+					return;
+				}
 		}
+
+	/*if( !IsStarted ) {
+		GoMenu();
+		return;
+	}*/
 
 	static sf::Vector2f oldpos;
 	static Piesa* piesa = nullptr;
 	static bool IsLeftMouseHeld = false;
 
-	static SpriteObj* patratInit = nullptr;
-	static SpriteObj* patratFinal = nullptr;
-
 	IsCheck = false;
 
 	if( !IsCheckMate && !IsStaleMate ) {
+		// aici preluam comenzile din mouse
 		if( sf::Mouse::isButtonPressed( sf::Mouse::Left ) ) {
 			auto pos = sf::Vector2f( sf::Mouse::getPosition( window ) );
 			if( !IsLeftMouseHeld ) {			//daca incepe o mutare cu mouseul
@@ -121,8 +150,10 @@ void Game::Go( sf::RenderWindow& window ) {
 
 					int moveType;
 					if( (moveType = _tabla.VerifyMoveWithCheck( oldcoords, coords )) != 0 ) {
-						LogMove( oldcoords, coords, moveType );					// mai intai inregistram mutarea!
+						// mai intai inregistram mutarea!
+						LogMove( oldcoords, coords, moveType );
 
+						// coloram patratele prin care se face mutarea
 						if( patratInit == nullptr )
 							patratInit = new SpriteObj( "Content/Patrat_initial.png", { 0,0 }, { 2.0,2.0 } );
 						if( patratFinal == nullptr )
@@ -130,6 +161,7 @@ void Game::Go( sf::RenderWindow& window ) {
 						patratInit->MoveTo( Piesa::GetPosFromCoords( oldcoords ) );
 						patratFinal->MoveTo( Piesa::GetPosFromCoords( coords ) );
 
+						// facem mutarea
 						_tabla.Move( oldcoords, coords );						// aici facem mutarea
 						if( moveType & MV_CASTLING )								// rocada
 							if( coords.x < 5 )		// rocada la stanga
@@ -146,12 +178,17 @@ void Game::Go( sf::RenderWindow& window ) {
 								_tabla.SetPiesa( coords, piesa );
 							}
 						}
-
-						if( !moveSoundBuffer.loadFromFile( crtColor == Piesa::Color::ALB ? "Content/Audio/whitemove.wav" : "Content/Audio/blackmove.wav" ) )
-							throw EXCEPT( "Cannot load file: " + std::string( crtColor == Piesa::Color::ALB ? "Content/Audio/whitemove.wav" : "Content/Audio/blackmove.wav" ) );
+						// play move sound
+						std::string audioFile = crtColor == Piesa::Color::ALB ? "Content/Audio/whitemove.wav" : "Content/Audio/blackmove.wav";
+						if( moveType & MV_CAPTURE )
+							audioFile = "Content/Audio/capture.wav";
+						if( !moveSoundBuffer.loadFromFile( audioFile ) )
+							throw EXCEPT( "Cannot load file: " + audioFile );
 						moveSound.setBuffer( moveSoundBuffer );
+						moveSound.setVolume( 30 );
 						moveSound.play();
 
+						// switch turns or end the game
 						if( _tabla.IsInCheckMate( Piesa::OtherColor( crtColor ) ) ) {
 							IsCheckMate = true;
 							WriteLog( crtColor == Piesa::Color::ALB ? "# 1-0" : "# 0-1" );
@@ -183,36 +220,21 @@ void Game::Go( sf::RenderWindow& window ) {
 	// desenam piesa pe care o avem selectata
 	if( piesa != nullptr )
 		gfx.Draw( piesa->GetSprite() );
+
 	// endgame
 	if( IsCheckMate || IsStaleMate ) {
-		SpriteObj checkmate( IsCheckMate ? "Content/CheckMate.png" : "Content/StaleMate.png" );
+		static SpriteObj checkmate( IsCheckMate ? "Content/CheckMate.png" : "Content/StaleMate.png" );
 		gfx.Draw( checkmate.GetSprite() );
-		sf::SoundBuffer soundBuffer;
+		static sf::SoundBuffer soundBuffer;
 		if( !soundBuffer.loadFromFile( IsCheckMate ? "Content/Audio/bomb.wav" : "Content/Audio/spayed.wav" ) )
 			throw EXCEPT( "Cannot load file: " + std::string( IsCheckMate ? "Content/Audio/bomb.wav" : "Content/Audio/spayed.wav" ) );
-		sf::Sound sound( soundBuffer );
-		gfx.Display();
-		sound.play();
-		while( true )
-			while( window.pollEvent( event ) )
-				switch( event.type ) {
-					case sf::Event::Closed:
-						window.close();
-						return;
-						break;
-					case sf::Event::KeyPressed:
-						if( event.key.code == sf::Keyboard::R ) {
-							Restart();
-							delete patratFinal;
-							patratFinal = nullptr;
-							delete patratInit;
-							patratInit = nullptr;
-							return;
-						}
-						break;
-				}
+		endSound.setBuffer( soundBuffer );
+
+		// dam play la sunet
+		endSound.play();
 	}
 
+	// afisam ceea ce am desenat in buffer 
 	gfx.Display();
 }
 

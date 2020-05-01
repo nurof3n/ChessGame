@@ -1,10 +1,14 @@
 #pragma once
-#include <SFML/Graphics.hpp>
+#include "SpriteObj.h"
 
-class Button {
+
+class Button : public SpriteObj {
 public:
-	Button();
+	Button() = delete;
+	Button( SpriteObj spriteObj );
+	Button( const std::string& filename, const sf::Vector2f& pos = sf::Vector2f( 0.0f, 0.0f ), const sf::Vector2f& scale = sf::Vector2f( 1.0f, 1.0f ) );
+	bool IsPressed();
 private:
-	sf::FloatRect hitbox;
+	sf::FloatRect _hitbox;
 };
 
