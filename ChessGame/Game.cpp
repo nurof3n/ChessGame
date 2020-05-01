@@ -147,6 +147,11 @@ void Game::Go( sf::RenderWindow& window ) {
 							}
 						}
 
+						if( !moveSoundBuffer.loadFromFile( crtColor == Piesa::Color::ALB ? "Content/Audio/whitemove.wav" : "Content/Audio/blackmove.wav" ) )
+							throw EXCEPT( "Cannot load file: " + std::string( crtColor == Piesa::Color::ALB ? "Content/Audio/whitemove.wav" : "Content/Audio/blackmove.wav" ) );
+						moveSound.setBuffer( moveSoundBuffer );
+						moveSound.play();
+
 						if( _tabla.IsInCheckMate( Piesa::OtherColor( crtColor ) ) ) {
 							IsCheckMate = true;
 							WriteLog( crtColor == Piesa::Color::ALB ? "# 1-0" : "# 0-1" );
@@ -184,7 +189,7 @@ void Game::Go( sf::RenderWindow& window ) {
 		gfx.Draw( checkmate.GetSprite() );
 		sf::SoundBuffer soundBuffer;
 		if( !soundBuffer.loadFromFile( IsCheckMate ? "Content/Audio/bomb.wav" : "Content/Audio/spayed.wav" ) )
-			throw CustomExcept( "Cannot load file: " + IsCheckMate ? "Content/Audio/bomb.wav" : "Content/Audio/spayed.wav" );
+			throw EXCEPT( "Cannot load file: " + std::string( IsCheckMate ? "Content/Audio/bomb.wav" : "Content/Audio/spayed.wav" ) );
 		sf::Sound sound( soundBuffer );
 		gfx.Display();
 		sound.play();

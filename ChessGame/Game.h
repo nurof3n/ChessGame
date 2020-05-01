@@ -35,5 +35,7 @@ private:
 	bool IsStaleMate = false;
 	std::string pgnFilename = "lastmatch.pgn";
 	std::ofstream pgnOutput;
+	sf::SoundBuffer moveSoundBuffer;
+	sf::Sound moveSound;
 };
 

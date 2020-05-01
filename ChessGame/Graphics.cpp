@@ -14,7 +14,7 @@ void Graphics::Setup() {
 	window.create( sf::VideoMode( 512, 512 ), "ChessGame" );
 	sf::Image icon;
 	if( !icon.loadFromFile( "Content/Icon.png" ) )
-		throw CustomExcept( "Cannot load file: Content/Icon.png" );
+		throw EXCEPT( "Cannot load file: Content/Icon.png" );
 	window.setIcon( 16, 16, icon.getPixelsPtr() );
 	// disable window resize
 	HWND hWnd = window.getSystemHandle();
