@@ -5,6 +5,8 @@
 class SpriteObj {
 public:
 	SpriteObj() = delete;
+	SpriteObj( const SpriteObj& ) = default;
+	SpriteObj( SpriteObj&& other ) noexcept;
 	SpriteObj( const std::string& filename, const sf::Vector2f& pos = sf::Vector2f( 0.0f, 0.0f ), const sf::Vector2f& scale = sf::Vector2f( 1.0f, 1.0f ) );
 	void Draw( Graphics& );
 	sf::Vector2f GetPos() const noexcept;

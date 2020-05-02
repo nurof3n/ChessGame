@@ -53,14 +53,7 @@ void Game::Setup() {
 	std::this_thread::sleep_for( 2s );
 #endif
 
-	_tabla.Setup();
-	crtColor = Piesa::Color::ALB;
-	round = 0;
-	IsStarted = false;
-	IsCheck = false;
-	IsCheckMate = false;
-	IsStaleMate = false;
-	pgnOutput.open( pgnFilename );
+	Restart();
 
 	ShowWindow( GetConsoleWindow(), SW_HIDE );
 	gfx.Setup();
@@ -77,13 +70,22 @@ void Game::Restart() noexcept {
 	pgnOutput.open( pgnFilename );
 }
 
-void Game::GoMenu() {
-	static Button buttonPlaySingle( SpriteObj( "Content/PlayButtonSingle.png", { 256.0f, 200.0f } ) );
-	static Button buttonPlayMulti( SpriteObj( "Content/PlayButtonMulti.png", { 256.0f, 300.0f } ) );
+void Game::GoMenu( sf::RenderWindow& window ) {
+	static SpriteObj ok( "Content/PlayButtonSingle.png", { 156.0f, 200.0f } ),
+		okok( "Content/PlayButtonMulti.png", { 156.0f, 300.0f } );
+	static Button buttonPlaySingle( std::move( ok ) );
+	static Button buttonPlayMulti( std::move( okok ) );
+
+	gfx.Clear();
+	gfx.Draw( _tabla.GetSprite() );
 	gfx.Draw( buttonPlaySingle.GetSprite() );
-	if( buttonPlaySingle.IsPressed() )
-		IsStarted = true;
+	gfx.Draw( buttonPlayMulti.GetSprite() );
 	gfx.Display();
+
+	if( buttonPlaySingle.IsPressed( window ) ) {
+		IsStarted = true;
+		IsSinglePlayer = true;
+	}
 }
 
 void Game::Go( sf::RenderWindow& window ) {
@@ -109,10 +111,10 @@ void Game::Go( sf::RenderWindow& window ) {
 				}
 		}
 
-	/*if( !IsStarted ) {
-		GoMenu();
+	if( !IsStarted ) {
+		GoMenu( window );
 		return;
-	}*/
+	}
 
 	static sf::Vector2f oldpos;
 	static Piesa* piesa = nullptr;
@@ -121,8 +123,8 @@ void Game::Go( sf::RenderWindow& window ) {
 	IsCheck = false;
 
 	if( !IsCheckMate && !IsStaleMate ) {
-		// aici preluam comenzile din mouse
-		if( sf::Mouse::isButtonPressed( sf::Mouse::Left ) ) {
+		// aici preluam comenzile din mouse, daca jucam singleplayer, sau suntem la rand in multiplayer
+		if( sf::Mouse::isButtonPressed( sf::Mouse::Left ) && (IsSinglePlayer || multiplayerColor == crtColor) ) {
 			auto pos = sf::Vector2f( sf::Mouse::getPosition( window ) );
 			if( !IsLeftMouseHeld ) {			//daca incepe o mutare cu mouseul
 				IsLeftMouseHeld = true;
@@ -138,72 +140,83 @@ void Game::Go( sf::RenderWindow& window ) {
 			}
 			if( piesa != nullptr )				//updatam pozitia piesei tinute, daca tinem vreuna
 				piesa->MoveTo( pos - sf::Vector2f( 32.0f, 32.0f ) );
-		} else {
-			if( IsLeftMouseHeld ) {			//daca tocmai s-a terminat o mutare din mouse
-				IsLeftMouseHeld = false;
-				if( piesa != nullptr ) {	//daca am mutat o piesa
-					auto oldcoords = Piesa::GetCoordsFromPos( oldpos );
-					auto coords = Piesa::GetCoordsFromPos( piesa->GetPos() + sf::Vector2f( 32.0f, 32.0f ) );
-					piesa->MoveTo( oldpos );
-					_tabla.SetPointer( oldcoords, piesa );
-					piesa = nullptr;
+		} else
+			// verificam daca am facut o mutare
+			if( IsSinglePlayer || multiplayerColor == crtColor ) {
+				if( IsLeftMouseHeld ) {			// daca tocmai s-a terminat o miscare din mouse
+					IsLeftMouseHeld = false;
+					if( piesa != nullptr ) {	// daca am mutat o piesa
+						auto oldcoords = Piesa::GetCoordsFromPos( oldpos );
+						auto coords = Piesa::GetCoordsFromPos( piesa->GetPos() + sf::Vector2f( 32.0f, 32.0f ) );
+						piesa->MoveTo( oldpos );
+						_tabla.SetPointer( oldcoords, piesa );
+						piesa = nullptr;
 
-					int moveType;
-					if( (moveType = _tabla.VerifyMoveWithCheck( oldcoords, coords )) != 0 ) {
-						// mai intai inregistram mutarea!
-						LogMove( oldcoords, coords, moveType );
+						int moveType;
+						if( (moveType = _tabla.VerifyMoveWithCheck( oldcoords, coords )) != 0 ) {
+							// mai intai inregistram mutarea!
+							LogMove( oldcoords, coords, moveType );
 
-						// coloram patratele prin care se face mutarea
-						if( patratInit == nullptr )
-							patratInit = new SpriteObj( "Content/Patrat_initial.png", { 0,0 }, { 2.0,2.0 } );
-						if( patratFinal == nullptr )
-							patratFinal = new SpriteObj( "Content/Patrat_final.png", { 0,0 }, { 2.0,2.0 } );
-						patratInit->MoveTo( Piesa::GetPosFromCoords( oldcoords ) );
-						patratFinal->MoveTo( Piesa::GetPosFromCoords( coords ) );
+							// coloram patratele prin care se face mutarea
+							if( patratInit == nullptr )
+								patratInit = new SpriteObj( "Content/Patrat_initial.png", { 0,0 }, { 2.0,2.0 } );
+							if( patratFinal == nullptr )
+								patratFinal = new SpriteObj( "Content/Patrat_final.png", { 0,0 }, { 2.0,2.0 } );
+							patratInit->MoveTo( Piesa::GetPosFromCoords( oldcoords ) );
+							patratFinal->MoveTo( Piesa::GetPosFromCoords( coords ) );
 
-						// facem mutarea
-						_tabla.Move( oldcoords, coords );						// aici facem mutarea
-						if( moveType & MV_CASTLING )								// rocada
-							if( coords.x < 5 )		// rocada la stanga
-								_tabla.Move( sf::Vector2i( 1, coords.y ), sf::Vector2i( coords.x + 1, coords.y ) );
-							else					// rocada la dreapta
-								_tabla.Move( sf::Vector2i( 8, coords.y ), sf::Vector2i( coords.x - 1, coords.y ) );
-						else if( moveType & MV_PROMOTION ) {						// promotie
-							_tabla.Erase( coords );
-							if( coords.y == 1 ) {
-								Piesa* piesa = new Piesa( "Content/Piese/Regina_negru.png", coords, Piesa::Piese::REGINA, Piesa::Color::NEGRU );
-								_tabla.SetPiesa( coords, piesa );
-							} else {
-								Piesa* piesa = new Piesa( "Content/Piese/Regina_alb.png", coords, Piesa::Piese::REGINA, Piesa::Color::ALB );
-								_tabla.SetPiesa( coords, piesa );
+							// facem mutarea
+							_tabla.Move( oldcoords, coords );						// aici facem mutarea
+							if( moveType & MV_CASTLING )								// rocada
+								if( coords.x < 5 )		// rocada la stanga
+									_tabla.Move( sf::Vector2i( 1, coords.y ), sf::Vector2i( coords.x + 1, coords.y ) );
+								else					// rocada la dreapta
+									_tabla.Move( sf::Vector2i( 8, coords.y ), sf::Vector2i( coords.x - 1, coords.y ) );
+							else if( moveType & MV_PROMOTION ) {						// promotie
+								_tabla.Erase( coords );
+								if( coords.y == 1 ) {
+									Piesa* piesa = new Piesa( "Content/Piese/Regina_negru.png", coords, Piesa::Piese::REGINA, Piesa::Color::NEGRU );
+									_tabla.SetPiesa( coords, piesa );
+								} else {
+									Piesa* piesa = new Piesa( "Content/Piese/Regina_alb.png", coords, Piesa::Piese::REGINA, Piesa::Color::ALB );
+									_tabla.SetPiesa( coords, piesa );
+								}
+							}
+							// play move sound
+							std::string audioFile = crtColor == Piesa::Color::ALB ? "Content/Audio/whitemove.wav" : "Content/Audio/blackmove.wav";
+							if( moveType & MV_CAPTURE )
+								audioFile = "Content/Audio/capture.wav";
+							if( !moveSoundBuffer.loadFromFile( audioFile ) )
+								throw EXCEPT( "Cannot load file: " + audioFile );
+							moveSound.setBuffer( moveSoundBuffer );
+							moveSound.setVolume( 30 );
+							moveSound.play();
+
+							// switch turns or end the game
+							if( _tabla.IsInCheckMate( Piesa::OtherColor( crtColor ) ) ) {
+								IsCheckMate = true;
+								WriteLog( crtColor == Piesa::Color::ALB ? "# 1-0" : "# 0-1" );
+							} else if( _tabla.IsInCheck( Piesa::OtherColor( crtColor ) ) ) {
+								WriteLog( "+" );
+								crtColor = Piesa::OtherColor( crtColor );
+							} else if( _tabla.IsInStaleMate( Piesa::OtherColor( crtColor ) ) ) {
+								IsStaleMate = true;
+								WriteLog( "1/2-1/2" );
+							} else
+								crtColor = Piesa::OtherColor( crtColor );
+
+							// transmitem mutarea la celalalt jucator
+							if( !IsSinglePlayer ) {
+
 							}
 						}
-						// play move sound
-						std::string audioFile = crtColor == Piesa::Color::ALB ? "Content/Audio/whitemove.wav" : "Content/Audio/blackmove.wav";
-						if( moveType & MV_CAPTURE )
-							audioFile = "Content/Audio/capture.wav";
-						if( !moveSoundBuffer.loadFromFile( audioFile ) )
-							throw EXCEPT( "Cannot load file: " + audioFile );
-						moveSound.setBuffer( moveSoundBuffer );
-						moveSound.setVolume( 30 );
-						moveSound.play();
-
-						// switch turns or end the game
-						if( _tabla.IsInCheckMate( Piesa::OtherColor( crtColor ) ) ) {
-							IsCheckMate = true;
-							WriteLog( crtColor == Piesa::Color::ALB ? "# 1-0" : "# 0-1" );
-						} else if( _tabla.IsInCheck( Piesa::OtherColor( crtColor ) ) ) {
-							WriteLog( "+" );
-							crtColor = Piesa::OtherColor( crtColor );
-						} else if( _tabla.IsInStaleMate( Piesa::OtherColor( crtColor ) ) ) {
-							IsStaleMate = true;
-							WriteLog( "1/2-1/2" );
-						} else
-							crtColor = Piesa::OtherColor( crtColor );
 					}
 				}
 			}
-		}
+		// asteptam mutare de la celalalt jucator
+			else {
+
+			}
 	} else return;
 
 
@@ -237,6 +250,8 @@ void Game::Go( sf::RenderWindow& window ) {
 	// afisam ceea ce am desenat in buffer 
 	gfx.Display();
 }
+
+void Game::Move( sf::Vector2i oldcoords, sf::Vector2i coords, int moveType ) {}
 
 void Game::LogMove( sf::Vector2i oldcoords, sf::Vector2i coords, int moveType ) {
 	std::string moveString = _tabla.GetMoveString( oldcoords, coords, moveType );
