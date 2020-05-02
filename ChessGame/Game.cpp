@@ -53,8 +53,6 @@ void Game::Setup() {
 	std::this_thread::sleep_for( 2s );
 #endif
 
-	Restart();
-
 	ShowWindow( GetConsoleWindow(), SW_HIDE );
 	gfx.Setup();
 }
@@ -66,6 +64,12 @@ void Game::Restart() noexcept {
 	IsCheck = false;
 	IsCheckMate = false;
 	IsStaleMate = false;
+	delete patratInit;
+	patratInit = nullptr;
+	delete patratFinal;
+	patratFinal = nullptr;
+	delete piesaTinuta;
+	piesaTinuta = nullptr;
 	pgnOutput.close();
 	pgnOutput.open( pgnFilename );
 }
@@ -76,21 +80,45 @@ void Game::GoMenu( sf::RenderWindow& window ) {
 	static Button buttonPlaySingle( std::move( ok ) );
 	static Button buttonPlayMulti( std::move( okok ) );
 
+	sf::Event event;
+	while( window.pollEvent( event ) )
+		switch( event.type ) {
+			case sf::Event::Closed:
+				window.close();
+				return;
+				break;
+			case sf::Event::MouseButtonPressed:
+				if( event.mouseButton.button == sf::Mouse::Left ) {
+					// start singleplayer game
+					if( buttonPlaySingle.mouseIsOver( window ) ) {
+						Restart();
+						IsStarted = true;
+						IsSinglePlayer = true;
+						return;
+					}
+					// start multiplayer game
+					else if( buttonPlayMulti.mouseIsOver( window ) ) {
+						/*Restart();
+						IsStarted = true;
+						IsSinglePlayer = false;
+						return;*/
+					}
+				}
+		}
+
 	gfx.Clear();
 	gfx.Draw( _tabla.GetSprite() );
 	gfx.Draw( buttonPlaySingle.GetSprite() );
 	gfx.Draw( buttonPlayMulti.GetSprite() );
 	gfx.Display();
-
-	if( buttonPlaySingle.IsPressed( window ) ) {
-		IsStarted = true;
-		IsSinglePlayer = true;
-	}
 }
 
 void Game::Go( sf::RenderWindow& window ) {
-	static SpriteObj* patratInit = nullptr;
-	static SpriteObj* patratFinal = nullptr;
+	if( !IsStarted ) {
+		GoMenu( window );
+		return;
+	}
+
 	static sf::Sound endSound;
 
 	sf::Event event;
@@ -99,25 +127,25 @@ void Game::Go( sf::RenderWindow& window ) {
 			case sf::Event::Closed:
 				window.close();
 				return;
+				break;
 			case sf::Event::KeyPressed:
+				// restart the game
 				if( event.key.code == sf::Keyboard::R && (IsCheckMate || IsStaleMate) ) {
 					endSound.stop();
 					Restart();
-					delete patratFinal;
-					patratFinal = nullptr;
-					delete patratInit;
-					patratInit = nullptr;
 					return;
 				}
+				// go to the menu
+				else if( event.key.code == sf::Keyboard::M && IsStarted ) {
+					endSound.stop();
+					IsStarted = false;
+					GoMenu( window );
+					return;
+				}
+				break;
 		}
 
-	if( !IsStarted ) {
-		GoMenu( window );
-		return;
-	}
-
 	static sf::Vector2f oldpos;
-	static Piesa* piesa = nullptr;
 	static bool IsLeftMouseHeld = false;
 
 	IsCheck = false;
@@ -130,67 +158,32 @@ void Game::Go( sf::RenderWindow& window ) {
 				IsLeftMouseHeld = true;
 				if( gfx.IsInWindow( pos ) ) {	//verificam sa nu fie mouseul in afara ferestrei
 					auto coords = Piesa::GetCoordsFromPos( pos );
-					piesa = _tabla.GetPiesa( coords );
-					if( piesa != nullptr ) 				//daca am apasat pe o piesa, retinem vechea pozitie
-						if( piesa->GetColor() == crtColor ) {
+					piesaTinuta = _tabla.GetPiesa( coords );
+					if( piesaTinuta != nullptr ) 				//daca am apasat pe o piesa, retinem vechea pozitie
+						if( piesaTinuta->GetColor() == crtColor ) {
 							_tabla.SetPointer( coords, nullptr );	//scoatem piesa de pe tabla
-							oldpos = piesa->GetPos();
-						} else piesa = nullptr;
+							oldpos = piesaTinuta->GetPos();
+						} else piesaTinuta = nullptr;
 				}
 			}
-			if( piesa != nullptr )				//updatam pozitia piesei tinute, daca tinem vreuna
-				piesa->MoveTo( pos - sf::Vector2f( 32.0f, 32.0f ) );
+			if( piesaTinuta != nullptr )				//updatam pozitia piesei tinute, daca tinem vreuna
+				piesaTinuta->MoveTo( pos - sf::Vector2f( 32.0f, 32.0f ) );
 		} else
 			// verificam daca am facut o mutare
 			if( IsSinglePlayer || multiplayerColor == crtColor ) {
 				if( IsLeftMouseHeld ) {			// daca tocmai s-a terminat o miscare din mouse
 					IsLeftMouseHeld = false;
-					if( piesa != nullptr ) {	// daca am mutat o piesa
+					if( piesaTinuta != nullptr ) {	// daca am mutat o piesa
 						auto oldcoords = Piesa::GetCoordsFromPos( oldpos );
-						auto coords = Piesa::GetCoordsFromPos( piesa->GetPos() + sf::Vector2f( 32.0f, 32.0f ) );
-						piesa->MoveTo( oldpos );
-						_tabla.SetPointer( oldcoords, piesa );
-						piesa = nullptr;
+						auto coords = Piesa::GetCoordsFromPos( piesaTinuta->GetPos() + sf::Vector2f( 32.0f, 32.0f ) );
+						piesaTinuta->MoveTo( oldpos );
+						_tabla.SetPointer( oldcoords, piesaTinuta );
+						piesaTinuta = nullptr;
 
 						int moveType;
 						if( (moveType = _tabla.VerifyMoveWithCheck( oldcoords, coords )) != 0 ) {
-							// mai intai inregistram mutarea!
-							LogMove( oldcoords, coords, moveType );
-
-							// coloram patratele prin care se face mutarea
-							if( patratInit == nullptr )
-								patratInit = new SpriteObj( "Content/Patrat_initial.png", { 0,0 }, { 2.0,2.0 } );
-							if( patratFinal == nullptr )
-								patratFinal = new SpriteObj( "Content/Patrat_final.png", { 0,0 }, { 2.0,2.0 } );
-							patratInit->MoveTo( Piesa::GetPosFromCoords( oldcoords ) );
-							patratFinal->MoveTo( Piesa::GetPosFromCoords( coords ) );
-
 							// facem mutarea
-							_tabla.Move( oldcoords, coords );						// aici facem mutarea
-							if( moveType & MV_CASTLING )								// rocada
-								if( coords.x < 5 )		// rocada la stanga
-									_tabla.Move( sf::Vector2i( 1, coords.y ), sf::Vector2i( coords.x + 1, coords.y ) );
-								else					// rocada la dreapta
-									_tabla.Move( sf::Vector2i( 8, coords.y ), sf::Vector2i( coords.x - 1, coords.y ) );
-							else if( moveType & MV_PROMOTION ) {						// promotie
-								_tabla.Erase( coords );
-								if( coords.y == 1 ) {
-									Piesa* piesa = new Piesa( "Content/Piese/Regina_negru.png", coords, Piesa::Piese::REGINA, Piesa::Color::NEGRU );
-									_tabla.SetPiesa( coords, piesa );
-								} else {
-									Piesa* piesa = new Piesa( "Content/Piese/Regina_alb.png", coords, Piesa::Piese::REGINA, Piesa::Color::ALB );
-									_tabla.SetPiesa( coords, piesa );
-								}
-							}
-							// play move sound
-							std::string audioFile = crtColor == Piesa::Color::ALB ? "Content/Audio/whitemove.wav" : "Content/Audio/blackmove.wav";
-							if( moveType & MV_CAPTURE )
-								audioFile = "Content/Audio/capture.wav";
-							if( !moveSoundBuffer.loadFromFile( audioFile ) )
-								throw EXCEPT( "Cannot load file: " + audioFile );
-							moveSound.setBuffer( moveSoundBuffer );
-							moveSound.setVolume( 30 );
-							moveSound.play();
+							Move( oldcoords, coords, moveType );
 
 							// switch turns or end the game
 							if( _tabla.IsInCheckMate( Piesa::OtherColor( crtColor ) ) ) {
@@ -231,8 +224,8 @@ void Game::Go( sf::RenderWindow& window ) {
 	// desenam piesele de pe tabla
 	_tabla.DrawPiese( gfx );
 	// desenam piesa pe care o avem selectata
-	if( piesa != nullptr )
-		gfx.Draw( piesa->GetSprite() );
+	if( piesaTinuta != nullptr )
+		gfx.Draw( piesaTinuta->GetSprite() );
 
 	// endgame
 	if( IsCheckMate || IsStaleMate ) {
@@ -251,7 +244,44 @@ void Game::Go( sf::RenderWindow& window ) {
 	gfx.Display();
 }
 
-void Game::Move( sf::Vector2i oldcoords, sf::Vector2i coords, int moveType ) {}
+void Game::Move( sf::Vector2i oldcoords, sf::Vector2i coords, int moveType ) {
+	// mai intai inregistram mutarea!
+	LogMove( oldcoords, coords, moveType );
+
+	// coloram patratele prin care se face mutarea
+	if( patratInit == nullptr )
+		patratInit = new SpriteObj( "Content/Patrat_initial.png", { 0,0 }, { 2.0,2.0 } );
+	if( patratFinal == nullptr )
+		patratFinal = new SpriteObj( "Content/Patrat_final.png", { 0,0 }, { 2.0,2.0 } );
+	patratInit->MoveTo( Piesa::GetPosFromCoords( oldcoords ) );
+	patratFinal->MoveTo( Piesa::GetPosFromCoords( coords ) );
+
+	_tabla.Move( oldcoords, coords );						// aici facem mutarea
+	if( moveType & MV_CASTLING )								// rocada
+		if( coords.x < 5 )		// rocada la stanga
+			_tabla.Move( sf::Vector2i( 1, coords.y ), sf::Vector2i( coords.x + 1, coords.y ) );
+		else					// rocada la dreapta
+			_tabla.Move( sf::Vector2i( 8, coords.y ), sf::Vector2i( coords.x - 1, coords.y ) );
+	else if( moveType & MV_PROMOTION ) {						// promotie
+		_tabla.Erase( coords );
+		if( coords.y == 1 ) {
+			Piesa* piesa = new Piesa( "Content/Piese/Regina_negru.png", coords, Piesa::Piese::REGINA, Piesa::Color::NEGRU );
+			_tabla.SetPiesa( coords, piesa );
+		} else {
+			Piesa* piesa = new Piesa( "Content/Piese/Regina_alb.png", coords, Piesa::Piese::REGINA, Piesa::Color::ALB );
+			_tabla.SetPiesa( coords, piesa );
+		}
+	}
+	// play move sound
+	std::string audioFile = crtColor == Piesa::Color::ALB ? "Content/Audio/whitemove.wav" : "Content/Audio/blackmove.wav";
+	if( moveType & MV_CAPTURE )
+		audioFile = "Content/Audio/capture.wav";
+	if( !moveSoundBuffer.loadFromFile( audioFile ) )
+		throw EXCEPT( "Cannot load file: " + audioFile );
+	moveSound.setBuffer( moveSoundBuffer );
+	moveSound.setVolume( 30 );
+	moveSound.play();
+}
 
 void Game::LogMove( sf::Vector2i oldcoords, sf::Vector2i coords, int moveType ) {
 	std::string moveString = _tabla.GetMoveString( oldcoords, coords, moveType );

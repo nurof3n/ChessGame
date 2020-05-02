@@ -42,5 +42,8 @@ private:
 	std::ofstream pgnOutput;
 	sf::SoundBuffer moveSoundBuffer;
 	sf::Sound moveSound;
+	SpriteObj* patratInit = nullptr;
+	SpriteObj* patratFinal = nullptr;
+	Piesa* piesaTinuta = nullptr;
 };
 

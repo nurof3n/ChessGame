@@ -13,7 +13,11 @@ Button::Button( const std::string& filename, const sf::Vector2f& pos, const sf::
 }
 
 bool Button::IsPressed( sf::RenderWindow& window ) {
-	if( sf::Mouse::isButtonPressed( sf::Mouse::Left ) && _hitbox.contains( sf::Vector2f( sf::Mouse::getPosition( window ) ) ) )
+	if( sf::Mouse::isButtonPressed( sf::Mouse::Left ) && mouseIsOver( window ) )
 		return true;
 	return false;
+}
+
+bool Button::mouseIsOver( sf::RenderWindow& window ) {
+	return _hitbox.contains( sf::Vector2f( sf::Mouse::getPosition( window ) ) );
 }
