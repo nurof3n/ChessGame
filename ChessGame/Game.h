@@ -2,6 +2,7 @@
 #include "Tabla.h"
 #include "Graphics.h"
 #include <SFML/Audio.hpp>
+#include <SFML/Network.hpp>
 #include <fstream>
 
 class Game {
@@ -26,6 +27,7 @@ public:
 	void Move( sf::Vector2i oldcoords, sf::Vector2i coords, int moveType );
 	void LogMove( sf::Vector2i oldcoords, sf::Vector2i coords, int moveType );
 	void WriteLog( std::string output );
+	bool EstablishConnection();
 public:
 	static Graphics& gfx;
 private:
@@ -45,5 +47,7 @@ private:
 	SpriteObj* patratInit = nullptr;
 	SpriteObj* patratFinal = nullptr;
 	Piesa* piesaTinuta = nullptr;
+	sf::TcpSocket tcpSocket;
+	sf::TcpListener tcpListener;
 };
 

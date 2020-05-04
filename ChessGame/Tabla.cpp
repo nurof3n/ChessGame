@@ -74,7 +74,7 @@ void Tabla::SetPointer( const sf::Vector2i& coords, Piesa* piesa ) noexcept {
 
 void Tabla::SetPiesa( const sf::Vector2i& coords, Piesa* piesa ) noexcept {
 	Erase( coords );
-	_tabla[coords.x][coords.y] = std::move( piesa );
+	SetPointer( coords, piesa );
 }
 
 void Tabla::Erase( const sf::Vector2i& coords ) noexcept {
@@ -89,7 +89,7 @@ bool Tabla::IsInBounds( const sf::Vector2i& pos ) const noexcept {
 
 //	returns 0 if the move is invalid. (doesn't account for Check, see VerifyMoveWithCheck)
 int Tabla::VerifyMove( const sf::Vector2i& init, const sf::Vector2i & final ) const {
-	if( !IsInBounds( final ) )
+	if( !IsInBounds( init ) || !IsInBounds( final ) )
 		return 0;
 	if( init == final )
 		return 0;
@@ -192,10 +192,12 @@ int Tabla::VerifyMove( const sf::Vector2i& init, const sf::Vector2i & final ) co
 int Tabla::VerifyMoveWithCheck( const sf::Vector2i& init, const sf::Vector2i & final ) {
 	int moveType;
 	if( (moveType = VerifyMove( init, final )) != 0 ) {
-		auto piesamutata = GetPiesa( init );	// mutare temporara, pentru a verifica sa nu ramanem in sah
+		// mutare temporara, pentru a verifica sa nu ramanem in sah
+		auto piesamutata = GetPiesa( init );
 		auto piesaluata = GetPiesa( final );
 		auto type = piesamutata->GetType();
 		auto color = piesamutata->GetColor();
+
 		// daca facem rocada, verificam conditiile
 		if( moveType & MV_CASTLING ) {
 			if( !IsAttacking( Piesa::OtherColor( color ), init ) &&
@@ -207,14 +209,15 @@ int Tabla::VerifyMoveWithCheck( const sf::Vector2i& init, const sf::Vector2i & f
 
 		SetPointer( init, nullptr );
 		SetPointer( final, piesamutata );
-		// verificam ca dupa mutare (daca nu mutam regele) sa nu fim in sah
-		if( type != Piesa::Piese::REGE && IsInCheck( color ) ) {
+		if( type == Piesa::Piese::REGE )
+			posRege[( int )color] = final;
+
+		// verificam ca dupa mutare sa nu fim in sah
+		if( IsInCheck( color ) ) {
 			SetPointer( init, piesamutata );
 			SetPointer( final, piesaluata );
-			return 0;
-		} else if( type == Piesa::Piese::REGE && IsAttacking( Piesa::OtherColor( color ), final ) ) {
-			SetPointer( init, piesamutata );
-			SetPointer( final, piesaluata );
+			if( type == Piesa::Piese::REGE )
+				posRege[( int )color] = init;
 			return 0;
 		} else {
 			SetPointer( init, piesamutata );
@@ -222,9 +225,9 @@ int Tabla::VerifyMoveWithCheck( const sf::Vector2i& init, const sf::Vector2i & f
 			// verificam daca este promotie
 			if( type == Piesa::Piese::PION )
 				if( color == Piesa::Color::ALB && final.y == 8 )
-					return moveType | MV_PROMOTION;
+					moveType |= MV_PROMOTION;
 				else if( color == Piesa::Color::NEGRU && final.y == 1 )
-					return moveType | MV_PROMOTION;
+					moveType |= MV_PROMOTION;
 
 			return moveType;
 		}
@@ -260,13 +263,11 @@ bool Tabla::IsInCheck( Piesa::Color defendingColor ) const {
 }
 
 bool Tabla::IsInCheckMate( Piesa::Color defendingColor ) {
-	if( IsInCheck( defendingColor ) && !CanMove( defendingColor ) )
-		return true;
-	return false;
+	return IsInCheck( defendingColor ) && !CanMove( defendingColor );
 }
 
 bool Tabla::IsInStaleMate( Piesa::Color defendingColor ) {
-	return !CanMove( defendingColor );
+	return !IsInCheck( defendingColor ) && !CanMove( defendingColor );
 }
 
 bool Tabla::CanMove( Piesa::Color color, sf::Vector2i coords, Piesa::Piese type ) {
@@ -278,9 +279,11 @@ bool Tabla::CanMove( Piesa::Color color, sf::Vector2i coords, Piesa::Piese type 
 						for( int l = 1; l <= 8; ++l )
 							if( VerifyMoveWithCheck( _tabla[i][j]->GetCoords(), sf::Vector2i( k, l ) ) != 0 )
 								return true;
-				} else if( VerifyMoveWithCheck( _tabla[i][j]->GetCoords(), coords ) != 0 )
-					return true;
-				return false;
+				} else {
+					if( VerifyMoveWithCheck( _tabla[i][j]->GetCoords(), coords ) != 0 )
+						return true;
+				}
+	return false;
 }
 
 bool Tabla::IsAttacking( Piesa::Color attackingColor, sf::Vector2i coords ) const {

@@ -37,7 +37,7 @@ public:
 	bool IsInBounds( const sf::Vector2i& ) const noexcept;
 	int VerifyMove( const sf::Vector2i&, const sf::Vector2i& ) const;
 	int VerifyMoveWithCheck( const sf::Vector2i&, const sf::Vector2i& );
-	void Move( const sf::Vector2i&, const sf::Vector2i& ) noexcept;
+	void Move( const sf::Vector2i& init, const sf::Vector2i & final ) noexcept;
 	bool Scan( const sf::Vector2i&, const sf::Vector2i&, const sf::Vector2i& ) const noexcept;
 	bool IsInCheck( Piesa::Color defendingColor ) const;
 	bool IsInCheckMate( Piesa::Color defendingColor );

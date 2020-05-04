@@ -75,10 +75,8 @@ void Game::Restart() noexcept {
 }
 
 void Game::GoMenu( sf::RenderWindow& window ) {
-	static SpriteObj ok( "Content/PlayButtonSingle.png", { 156.0f, 200.0f } ),
-		okok( "Content/PlayButtonMulti.png", { 156.0f, 300.0f } );
-	static Button buttonPlaySingle( std::move( ok ) );
-	static Button buttonPlayMulti( std::move( okok ) );
+	static Button buttonPlaySingle( "Content/PlayButtonSingle.png", { 156.0f, 200.0f } );
+	static Button buttonPlayMulti( "Content/PlayButtonMulti.png", { 156.0f, 300.0f } );
 
 	sf::Event event;
 	while( window.pollEvent( event ) )
@@ -98,10 +96,12 @@ void Game::GoMenu( sf::RenderWindow& window ) {
 					}
 					// start multiplayer game
 					else if( buttonPlayMulti.mouseIsOver( window ) ) {
-						/*Restart();
-						IsStarted = true;
-						IsSinglePlayer = false;
-						return;*/
+						if( EstablishConnection() ) {
+							Restart();
+							IsStarted = true;
+							IsSinglePlayer = false;
+						}
+						return;
 					}
 				}
 		}
@@ -139,6 +139,7 @@ void Game::Go( sf::RenderWindow& window ) {
 				else if( event.key.code == sf::Keyboard::M && IsStarted ) {
 					endSound.stop();
 					IsStarted = false;
+					tcpSocket.disconnect();
 					GoMenu( window );
 					return;
 				}
@@ -168,48 +169,68 @@ void Game::Go( sf::RenderWindow& window ) {
 			}
 			if( piesaTinuta != nullptr )				//updatam pozitia piesei tinute, daca tinem vreuna
 				piesaTinuta->MoveTo( pos - sf::Vector2f( 32.0f, 32.0f ) );
-		} else
-			// verificam daca am facut o mutare
+		} else {
+			sf::Vector2i oldcoords, coords;
+			int moveType;
+			// verificam daca suntem la rand 
 			if( IsSinglePlayer || multiplayerColor == crtColor ) {
-				if( IsLeftMouseHeld ) {			// daca tocmai s-a terminat o miscare din mouse
+				if( IsLeftMouseHeld ) {				// daca tocmai s-a terminat o miscare din mouse
 					IsLeftMouseHeld = false;
 					if( piesaTinuta != nullptr ) {	// daca am mutat o piesa
-						auto oldcoords = Piesa::GetCoordsFromPos( oldpos );
-						auto coords = Piesa::GetCoordsFromPos( piesaTinuta->GetPos() + sf::Vector2f( 32.0f, 32.0f ) );
+						oldcoords = Piesa::GetCoordsFromPos( oldpos );
+						coords = Piesa::GetCoordsFromPos( piesaTinuta->GetPos() + sf::Vector2f( 32.0f, 32.0f ) );
 						piesaTinuta->MoveTo( oldpos );
 						_tabla.SetPointer( oldcoords, piesaTinuta );
 						piesaTinuta = nullptr;
 
-						int moveType;
 						if( (moveType = _tabla.VerifyMoveWithCheck( oldcoords, coords )) != 0 ) {
 							// facem mutarea
 							Move( oldcoords, coords, moveType );
 
-							// switch turns or end the game
-							if( _tabla.IsInCheckMate( Piesa::OtherColor( crtColor ) ) ) {
-								IsCheckMate = true;
-								WriteLog( crtColor == Piesa::Color::ALB ? "# 1-0" : "# 0-1" );
-							} else if( _tabla.IsInCheck( Piesa::OtherColor( crtColor ) ) ) {
-								WriteLog( "+" );
-								crtColor = Piesa::OtherColor( crtColor );
-							} else if( _tabla.IsInStaleMate( Piesa::OtherColor( crtColor ) ) ) {
-								IsStaleMate = true;
-								WriteLog( "1/2-1/2" );
-							} else
-								crtColor = Piesa::OtherColor( crtColor );
-
 							// transmitem mutarea la celalalt jucator
 							if( !IsSinglePlayer ) {
-
+								sf::Packet packetSent;
+								packetSent << oldcoords.x << oldcoords.y << coords.x << coords.y << moveType;
+								// if connection is lost, return to menu
+								tcpSocket.setBlocking( true );
+								if( tcpSocket.send( packetSent ) != sf::Socket::Status::Done ) {
+									tcpSocket.disconnect();
+									system( "cls" );
+									ShowWindow( GetConsoleWindow(), SW_SHOW );
+									std::cout << "Connection lost. Press any key to return to menu...\n";
+									_getch();
+									ShowWindow( GetConsoleWindow(), SW_HIDE );
+									IsStarted = false;
+									GoMenu( window );
+									return;
+								}
 							}
 						}
 					}
 				}
 			}
-		// asteptam mutare de la celalalt jucator
+			// asteptam mutare de la celalalt jucator
 			else {
-
+				sf::Packet packetReceived;
+				tcpSocket.setBlocking( false );
+				if( tcpSocket.receive( packetReceived ) != sf::Socket::Status::NotReady )
+					// daca am primit pachetul, reprezentam mutarea local
+					if( packetReceived >> oldcoords.x >> oldcoords.y >> coords.x >> coords.y >> moveType )
+						Move( oldcoords, coords, moveType );
+					// if connection is lost, return to menu
+					else {
+						tcpSocket.disconnect();
+						system( "cls" );
+						ShowWindow( GetConsoleWindow(), SW_SHOW );
+						std::cout << "Connection lost. Press any key to return to menu...\n";
+						_getch();
+						ShowWindow( GetConsoleWindow(), SW_HIDE );
+						IsStarted = false;
+						GoMenu( window );
+						return;
+					}
 			}
+		}
 	} else return;
 
 
@@ -244,6 +265,7 @@ void Game::Go( sf::RenderWindow& window ) {
 	gfx.Display();
 }
 
+// mutare fara verificare
 void Game::Move( sf::Vector2i oldcoords, sf::Vector2i coords, int moveType ) {
 	// mai intai inregistram mutarea!
 	LogMove( oldcoords, coords, moveType );
@@ -281,6 +303,19 @@ void Game::Move( sf::Vector2i oldcoords, sf::Vector2i coords, int moveType ) {
 	moveSound.setBuffer( moveSoundBuffer );
 	moveSound.setVolume( 30 );
 	moveSound.play();
+
+	// switch turns or end the game
+	if( _tabla.IsInCheckMate( Piesa::OtherColor( crtColor ) ) ) {
+		IsCheckMate = true;
+		WriteLog( crtColor == Piesa::Color::ALB ? "# 1-0" : "# 0-1" );
+	} else if( _tabla.IsInCheck( Piesa::OtherColor( crtColor ) ) ) {
+		WriteLog( "+" );
+		crtColor = Piesa::OtherColor( crtColor );
+	} else if( _tabla.IsInStaleMate( Piesa::OtherColor( crtColor ) ) ) {
+		IsStaleMate = true;
+		WriteLog( "1/2-1/2" );
+	} else
+		crtColor = Piesa::OtherColor( crtColor );
 }
 
 void Game::LogMove( sf::Vector2i oldcoords, sf::Vector2i coords, int moveType ) {
@@ -294,5 +329,59 @@ void Game::LogMove( sf::Vector2i oldcoords, sf::Vector2i coords, int moveType ) 
 
 void Game::WriteLog( std::string output ) {
 	pgnOutput << output;
+}
+
+// we use port 50000
+// gotta configure this dumb shit idk
+bool Game::EstablishConnection() {
+	system( "cls" );
+	ShowWindow( GetConsoleWindow(), SW_SHOW );
+	std::cout << "Enter IP or give the other player your IP to connect...\n";
+	std::cout << "To be able to receive incoming connections, you need to forward port 50000\n";
+	std::cout << "Type connect or wait...\n";
+	std::string command;
+	bool connecting = false;
+	while( true ) {
+		std::cin >> command;
+		if( command == "connect" ) {
+			connecting = true;
+			break;
+		} else if( command == "wait" ) {
+			break;
+		} else
+			std::cout << "Unrecognized command\n";
+	}
+
+	if( connecting ) {
+		std::string ip;
+		std::cin >> ip;
+		std::cout << "Connecting to host...\n";
+		sf::Socket::Status status = tcpSocket.connect( ip, 50000, sf::seconds( 5.0f ) );
+		if( status != sf::Socket::Done ) {
+			std::cout << "\nConnection failed. Press any key to return to menu...\n";
+			_getch();
+			ShowWindow( GetConsoleWindow(), SW_HIDE );
+			return false;
+		} else {
+			std::cout << "\nConnection successful! Starting game...\n";
+			ShowWindow( GetConsoleWindow(), SW_HIDE );
+			multiplayerColor = Piesa::Color::ALB;
+			return true;
+		}
+	} else {
+		if( tcpListener.listen( 50000 ) != sf::Socket::Status::Done ) {
+			std::cout << "\nCannot listen to port 50000. Press any key to return to menu...\n";
+			_getch();
+			ShowWindow( GetConsoleWindow(), SW_HIDE );
+			return false;
+		}
+		if( tcpListener.accept( tcpSocket ) == sf::Socket::Status::Done ) {
+			std::cout << "\nConnection successful! Starting game...\n";
+			ShowWindow( GetConsoleWindow(), SW_HIDE );
+			multiplayerColor = Piesa::Color::NEGRU;
+			return true;
+		}
+	}
+
 }
 

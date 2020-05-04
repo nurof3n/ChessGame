@@ -2,7 +2,7 @@
 
 Button::Button( SpriteObj spriteObj )
 	:
-	SpriteObj( std::forward<SpriteObj>( spriteObj ) ) {
+	SpriteObj( spriteObj ) {
 	_hitbox = GetSprite().getGlobalBounds();
 }
 
