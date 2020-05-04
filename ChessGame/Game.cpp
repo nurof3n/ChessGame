@@ -183,7 +183,7 @@ void Game::Go( sf::RenderWindow& window ) {
 						_tabla.SetPointer( oldcoords, piesaTinuta );
 						piesaTinuta = nullptr;
 
-						if( (moveType = _tabla.VerifyMoveWithCheck( oldcoords, coords )) != 0 ) {
+						if( (moveType = _tabla.VerifyMoveWithCheck( oldcoords, coords )) & MV_VALID ) {
 							// facem mutarea
 							Move( oldcoords, coords, moveType );
 
@@ -217,7 +217,7 @@ void Game::Go( sf::RenderWindow& window ) {
 					// daca am primit pachetul, reprezentam mutarea local
 					if( packetReceived >> oldcoords.x >> oldcoords.y >> coords.x >> coords.y >> moveType )
 						Move( oldcoords, coords, moveType );
-					// if connection is lost, return to menu
+				// if connection is lost, return to menu
 					else {
 						tcpSocket.disconnect();
 						system( "cls" );
