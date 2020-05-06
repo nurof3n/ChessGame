@@ -147,6 +147,7 @@ void Game::Go( sf::RenderWindow& window ) {
 							refusedRestart = true;
 							wantsRestart = false;
 							tcpSocket.disconnect();
+							tcpListener.close();
 						}
 						// daca si celalalt voia rematch, dam rematch
 						else if( pendingRestart ) {
@@ -164,6 +165,7 @@ void Game::Go( sf::RenderWindow& window ) {
 					wantsRestart = false;
 					isStarted = false;
 					tcpSocket.disconnect();
+					tcpListener.close();
 					GoMenu( window );
 					return;
 				}
@@ -217,6 +219,7 @@ void Game::Go( sf::RenderWindow& window ) {
 								// if connection is lost, return to menu
 								if( tcpSocket.send( packetSent ) == sf::Socket::Status::Disconnected ) {
 									tcpSocket.disconnect();
+									tcpListener.close();
 									system( "cls" );
 									ShowWindow( GetConsoleWindow(), SW_SHOW );
 									std::cout << "Connection lost. Press any key to return to menu...\n";
@@ -244,6 +247,7 @@ void Game::Go( sf::RenderWindow& window ) {
 					// if packet is lost, return to menu
 					else {
 						tcpSocket.disconnect();
+						tcpListener.close();
 						system( "cls" );
 						ShowWindow( GetConsoleWindow(), SW_SHOW );
 						std::cout << "Connection lost. Press any key to return to menu...\n";
@@ -258,6 +262,7 @@ void Game::Go( sf::RenderWindow& window ) {
 					// if connection is lost, return to menu
 					if( status == sf::Socket::Status::Disconnected ) {
 						tcpSocket.disconnect();
+						tcpListener.close();
 						system( "cls" );
 						ShowWindow( GetConsoleWindow(), SW_SHOW );
 						std::cout << "Connection lost. Press any key to return to menu...\n";
@@ -314,6 +319,7 @@ void Game::GoEnd( sf::RenderWindow& window ) {
 							refusedRestart = true;
 							wantsRestart = false;
 							tcpSocket.disconnect();
+							tcpListener.close();
 						}
 						// daca si celalalt voia rematch, dam rematch
 						else if( pendingRestart ) {
@@ -331,6 +337,7 @@ void Game::GoEnd( sf::RenderWindow& window ) {
 					wantsRestart = false;
 					isStarted = false;
 					tcpSocket.disconnect();
+					tcpListener.close();
 					GoMenu( window );
 					return;
 				}
@@ -355,12 +362,14 @@ void Game::GoEnd( sf::RenderWindow& window ) {
 				refusedRestart = true;
 				wantsRestart = false;
 				tcpSocket.disconnect();
+				tcpListener.close();
 			}
 		} else
 			if( status == sf::Socket::Status::Disconnected ) {
 				refusedRestart = true;
 				wantsRestart = false;
 				tcpSocket.disconnect();
+				tcpListener.close();
 			}
 	}
 
@@ -393,9 +402,11 @@ void Game::GoEnd( sf::RenderWindow& window ) {
 		gfx.Draw( checkmate.GetSprite() );
 	}
 
-	if( !endSoundBuffer.loadFromFile( isCheckMate ? "Content/Audio/bomb.wav" : "Content/Audio/spayed.wav" ) )
+	// I NEED TO FIGURE THIS OUT
+
+	/*if( !endSoundBuffer.loadFromFile( isCheckMate ? "Content/Audio/bomb.wav" : "Content/Audio/spayed.wav" ) )
 		throw EXCEPT( "Cannot load file: " + std::string( isCheckMate ? "Content/Audio/bomb.wav" : "Content/Audio/spayed.wav" ) );
-	endSound.play();
+	endSound.play();*/
 
 	gfx.Display();
 }
