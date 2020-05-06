@@ -58,6 +58,7 @@ void Game::Setup() {
 }
 // remember to reinitialize variables here
 void Game::Restart() noexcept {
+	//endSound.stop();
 	_tabla.Setup();
 	crtColor = Piesa::Color::ALB;
 	round = 0;
@@ -118,34 +119,12 @@ void Game::GoMenu( sf::RenderWindow& window ) {
 }
 
 void Game::Go( sf::RenderWindow& window ) {
+
+	sf::SoundBuffer soundBuffer;
+	sf::Sound endSound;
 	if( !isStarted ) {
 		GoMenu( window );
 		return;
-	} else if( isFinished && !isSinglePlayer ) {
-		sf::Packet packetReceived;
-		tcpSocket.setBlocking( false );
-		sf::Socket::Status status = tcpSocket.receive( packetReceived );
-		// daca am primit pachetul, verificam daca a acceptat rematch
-		if( status == sf::Socket::Status::Done ) {
-			bool response;
-			if( packetReceived >> response && response ) {
-				pendingRestart = true;
-				// daca si noi voiam rematch, dam rematch
-				if( wantsRestart ) {
-					Restart();
-					return;
-				}
-			} else {
-				refusedRestart = true;
-				wantsRestart = false;
-				tcpSocket.disconnect();
-			}
-		} else
-			if( status == sf::Socket::Status::Disconnected ) {
-				refusedRestart = true;
-				wantsRestart = false;
-				tcpSocket.disconnect();
-			}
 	}
 
 	sf::Event event;
@@ -291,8 +270,10 @@ void Game::Go( sf::RenderWindow& window ) {
 					}
 			}
 		}
+	} else {
+		GoEnd( window );
+		return;
 	}
-
 
 	gfx.Clear();
 	// desenam tabla
@@ -308,7 +289,96 @@ void Game::Go( sf::RenderWindow& window ) {
 	if( piesaTinuta != nullptr )
 		gfx.Draw( piesaTinuta->GetSprite() );
 
-	// endscreen
+	// afisam ceea ce am desenat in buffer 
+	gfx.Display();
+}
+
+void Game::GoEnd( sf::RenderWindow& window ) {
+	sf::Event event;
+	while( window.pollEvent( event ) )
+		switch( event.type ) {
+			case sf::Event::Closed:
+				window.close();
+				return;
+				break;
+			case sf::Event::KeyPressed:
+				// restart the game
+				if( event.key.code == sf::Keyboard::R && !wantsRestart ) {
+					if( !isSinglePlayer ) {
+						wantsRestart = true;
+						// transmitem faptul ca vrem rematch
+						sf::Packet packetSent;
+						packetSent << true;
+						tcpSocket.setBlocking( true );
+						if( tcpSocket.send( packetSent ) == sf::Socket::Status::Disconnected ) {
+							refusedRestart = true;
+							wantsRestart = false;
+							tcpSocket.disconnect();
+						}
+						// daca si celalalt voia rematch, dam rematch
+						else if( pendingRestart ) {
+							Restart();
+							return;
+						}
+					} else {
+						Restart();
+						return;
+					}
+				}
+				// go to the menu
+				else if( event.key.code == sf::Keyboard::M ) {
+					//endSound.stop();
+					wantsRestart = false;
+					isStarted = false;
+					tcpSocket.disconnect();
+					GoMenu( window );
+					return;
+				}
+				break;
+		}
+
+	if( !isSinglePlayer ) {
+		sf::Packet packetReceived;
+		tcpSocket.setBlocking( false );
+		sf::Socket::Status status = tcpSocket.receive( packetReceived );
+		// daca am primit pachetul, verificam daca a acceptat rematch
+		if( status == sf::Socket::Status::Done ) {
+			bool response;
+			if( packetReceived >> response && response ) {
+				pendingRestart = true;
+				// daca si noi voiam rematch, dam rematch
+				if( wantsRestart ) {
+					Restart();
+					return;
+				}
+			} else {
+				refusedRestart = true;
+				wantsRestart = false;
+				tcpSocket.disconnect();
+			}
+		} else
+			if( status == sf::Socket::Status::Disconnected ) {
+				refusedRestart = true;
+				wantsRestart = false;
+				tcpSocket.disconnect();
+			}
+	}
+
+	gfx.Clear();
+	// desenam tabla
+	gfx.Draw( _tabla.GetSprite() );
+	// coloram patratelul din care am mutat si cel in care am mutat
+	if( patratInit != nullptr )
+		gfx.Draw( patratInit->GetSprite() );
+	if( patratFinal != nullptr )
+		gfx.Draw( patratFinal->GetSprite() );
+	// desenam piesele de pe tabla
+	_tabla.DrawPiese( gfx );
+	// desenam piesa pe care o avem selectata
+	if( piesaTinuta != nullptr )
+		gfx.Draw( piesaTinuta->GetSprite() );
+
+
 	if( refusedRestart ) {
 		static SpriteObj refusedRematch( "Content/RefusedRematch.png" );
 		gfx.Draw( refusedRematch.GetSprite() );
@@ -318,19 +388,15 @@ void Game::Go( sf::RenderWindow& window ) {
 	} else if( pendingRestart ) {
 		static SpriteObj pending( "Content/PendingRematch.png" );
 		gfx.Draw( pending.GetSprite() );
-	} else if( isFinished ) {
+	} else {
 		static SpriteObj checkmate( isCheckMate ? "Content/CheckMate.png" : "Content/StaleMate.png" );
 		gfx.Draw( checkmate.GetSprite() );
-		static sf::SoundBuffer soundBuffer;
-		static sf::Sound endSound;
-		if( !soundBuffer.loadFromFile( isCheckMate ? "Content/Audio/bomb.wav" : "Content/Audio/spayed.wav" ) )
-			throw EXCEPT( "Cannot load file: " + std::string( isCheckMate ? "Content/Audio/bomb.wav" : "Content/Audio/spayed.wav" ) );
-		// dam play la sunet
-		endSound.setBuffer( soundBuffer );
-		endSound.play();
 	}
 
-	// afisam ceea ce am desenat in buffer 
+	if( !endSoundBuffer.loadFromFile( isCheckMate ? "Content/Audio/bomb.wav" : "Content/Audio/spayed.wav" ) )
+		throw EXCEPT( "Cannot load file: " + std::string( isCheckMate ? "Content/Audio/bomb.wav" : "Content/Audio/spayed.wav" ) );
+	endSound.play();
+
 	gfx.Display();
 }
 

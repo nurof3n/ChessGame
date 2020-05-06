@@ -5,6 +5,7 @@
 #include <SFML/Network.hpp>
 #include <fstream>
 
+
 class Game {
 public:
 	enum class RezMutare {
@@ -24,6 +25,7 @@ public:
 	void Restart() noexcept;
 	void GoMenu( sf::RenderWindow& window );
 	void Go( sf::RenderWindow& window );
+	void GoEnd( sf::RenderWindow& window );
 	void Move( sf::Vector2i oldcoords, sf::Vector2i coords, int moveType );
 	void LogMove( sf::Vector2i oldcoords, sf::Vector2i coords, int moveType );
 	void WriteLog( std::string output );
@@ -45,8 +47,8 @@ private:
 	bool isFinished = false;
 	std::string pgnFilename = "lastmatch.pgn";
 	std::ofstream pgnOutput;
-	sf::SoundBuffer moveSoundBuffer;
-	sf::Sound moveSound;
+	sf::SoundBuffer moveSoundBuffer, endSoundBuffer;
+	sf::Sound moveSound, endSound;
 	SpriteObj* patratInit = nullptr;
 	SpriteObj* patratFinal = nullptr;
 	Piesa* piesaTinuta = nullptr;
