@@ -27,7 +27,7 @@ public:
 	Tabla();
 	~Tabla() noexcept;
 
-	void Setup() noexcept;
+	void Setup();
 	void DrawPiese( Graphics& gfx );
 	Piesa* GetPiesa( const sf::Vector2i& coords ) const noexcept;
 	sf::Vector2i GetPosRege( const Piesa::Color& color ) const noexcept;

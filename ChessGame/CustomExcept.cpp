@@ -7,7 +7,7 @@ CustomExcept::CustomExcept( const std::string& file, int line, const std::string
 	_file( file ) {}
 
 const char* CustomExcept::GetType() const noexcept {
-	return "Custom Exception:";
+	return "Custom Exception";
 }
 
 const char* CustomExcept::what() const noexcept {

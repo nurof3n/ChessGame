@@ -15,7 +15,7 @@ Tabla::~Tabla() noexcept {
 				Erase( { i, j } );
 }
 
-void Tabla::Setup() noexcept {
+void Tabla::Setup() {
 	for( int i = 0; i <= 8; ++i )
 		for( int j = 0; j <= 8; ++j )
 			if( _tabla[i][j] != nullptr )

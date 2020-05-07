@@ -119,11 +119,12 @@ void Game::GoMenu( sf::RenderWindow& window ) {
 }
 
 void Game::Go( sf::RenderWindow& window ) {
-
-	sf::SoundBuffer soundBuffer;
-	sf::Sound endSound;
 	if( !isStarted ) {
 		GoMenu( window );
+		return;
+	}
+	if( isFinished ) {
+		GoEnd( window );
 		return;
 	}
 
@@ -135,32 +136,8 @@ void Game::Go( sf::RenderWindow& window ) {
 				return;
 				break;
 			case sf::Event::KeyPressed:
-				// restart the game
-				if( event.key.code == sf::Keyboard::R && isFinished && !wantsRestart ) {
-					if( !isSinglePlayer ) {
-						wantsRestart = true;
-						// transmitem faptul ca vrem rematch
-						sf::Packet packetSent;
-						packetSent << true;
-						tcpSocket.setBlocking( true );
-						if( tcpSocket.send( packetSent ) == sf::Socket::Status::Disconnected ) {
-							refusedRestart = true;
-							wantsRestart = false;
-							tcpSocket.disconnect();
-							tcpListener.close();
-						}
-						// daca si celalalt voia rematch, dam rematch
-						else if( pendingRestart ) {
-							Restart();
-							return;
-						}
-					} else {
-						Restart();
-						return;
-					}
-				}
 				// go to the menu
-				else if( event.key.code == sf::Keyboard::M && isStarted ) {
+				if( event.key.code == sf::Keyboard::M && isStarted ) {
 					//endSound.stop();
 					wantsRestart = false;
 					isStarted = false;
@@ -172,112 +149,107 @@ void Game::Go( sf::RenderWindow& window ) {
 				break;
 		}
 
+
+	// aici preluam comenzile din mouse, daca jucam singleplayer, sau suntem la rand in multiplayer
 	static sf::Vector2f oldpos;
 	static bool IsLeftMouseHeld = false;
-
-	if( !isFinished ) {
-		// aici preluam comenzile din mouse, daca jucam singleplayer, sau suntem la rand in multiplayer
-		if( sf::Mouse::isButtonPressed( sf::Mouse::Left ) && (isSinglePlayer || multiplayerColor == crtColor) ) {
-			auto pos = sf::Vector2f( sf::Mouse::getPosition( window ) );
-			if( !IsLeftMouseHeld ) {			//daca incepe o mutare cu mouseul
-				IsLeftMouseHeld = true;
-				if( gfx.IsInWindow( pos ) ) {	//verificam sa nu fie mouseul in afara ferestrei
-					auto coords = Piesa::GetCoordsFromPos( pos );
-					piesaTinuta = _tabla.GetPiesa( coords );
-					if( piesaTinuta != nullptr ) 				//daca am apasat pe o piesa, retinem vechea pozitie
-						if( piesaTinuta->GetColor() == crtColor ) {
-							_tabla.SetPointer( coords, nullptr );	//scoatem piesa de pe tabla
-							oldpos = piesaTinuta->GetPos();
-						} else piesaTinuta = nullptr;
-				}
+	if( sf::Mouse::isButtonPressed( sf::Mouse::Left ) && (isSinglePlayer || multiplayerColor == crtColor) ) {
+		auto pos = sf::Vector2f( sf::Mouse::getPosition( window ) );
+		if( !IsLeftMouseHeld ) {			//daca incepe o mutare cu mouseul
+			IsLeftMouseHeld = true;
+			if( gfx.IsInWindow( pos ) ) {	//verificam sa nu fie mouseul in afara ferestrei
+				auto coords = Piesa::GetCoordsFromPos( pos );
+				piesaTinuta = _tabla.GetPiesa( coords );
+				if( piesaTinuta != nullptr ) 				//daca am apasat pe o piesa, retinem vechea pozitie
+					if( piesaTinuta->GetColor() == crtColor ) {
+						_tabla.SetPointer( coords, nullptr );	//scoatem piesa de pe tabla
+						oldpos = piesaTinuta->GetPos();
+					} else piesaTinuta = nullptr;
 			}
-			if( piesaTinuta != nullptr )				//updatam pozitia piesei tinute, daca tinem vreuna
-				piesaTinuta->MoveTo( pos - sf::Vector2f( 32.0f, 32.0f ) );
-		} else {
-			sf::Vector2i oldcoords, coords;
-			int moveType;
-			// verificam daca suntem la rand 
-			if( isSinglePlayer || multiplayerColor == crtColor ) {
-				if( IsLeftMouseHeld ) {				// daca tocmai s-a terminat o miscare din mouse
-					IsLeftMouseHeld = false;
-					if( piesaTinuta != nullptr ) {	// daca am mutat o piesa
-						oldcoords = Piesa::GetCoordsFromPos( oldpos );
-						coords = Piesa::GetCoordsFromPos( piesaTinuta->GetPos() + sf::Vector2f( 32.0f, 32.0f ) );
-						piesaTinuta->MoveTo( oldpos );
-						_tabla.SetPointer( oldcoords, piesaTinuta );
-						piesaTinuta = nullptr;
+		}
+		if( piesaTinuta != nullptr )				//updatam pozitia piesei tinute, daca tinem vreuna
+			piesaTinuta->MoveTo( pos - sf::Vector2f( 32.0f, 32.0f ) );
+	} else {
+		sf::Vector2i oldcoords, coords;
+		int moveType;
+		// verificam daca suntem la rand 
+		if( isSinglePlayer || multiplayerColor == crtColor ) {
+			if( IsLeftMouseHeld ) {				// daca tocmai s-a terminat o miscare din mouse
+				IsLeftMouseHeld = false;
+				if( piesaTinuta != nullptr ) {	// daca am mutat o piesa
+					oldcoords = Piesa::GetCoordsFromPos( oldpos );
+					coords = Piesa::GetCoordsFromPos( piesaTinuta->GetPos() + sf::Vector2f( 32.0f, 32.0f ) );
+					piesaTinuta->MoveTo( oldpos );
+					_tabla.SetPointer( oldcoords, piesaTinuta );
+					piesaTinuta = nullptr;
 
-						if( (moveType = _tabla.VerifyMoveWithCheck( oldcoords, coords )) & MV_VALID ) {
-							// facem mutarea
-							Move( oldcoords, coords, moveType );
+					if( (moveType = _tabla.VerifyMoveWithCheck( oldcoords, coords )) & MV_VALID ) {
+						// facem mutarea
+						Move( oldcoords, coords, moveType );
 
-							// transmitem mutarea la celalalt jucator
-							if( !isSinglePlayer ) {
-								sf::Packet packetSent;
-								packetSent << oldcoords.x << oldcoords.y << coords.x << coords.y << moveType;
-								tcpSocket.setBlocking( true );
-								// if connection is lost, return to menu
-								if( tcpSocket.send( packetSent ) == sf::Socket::Status::Disconnected ) {
-									tcpSocket.disconnect();
-									tcpListener.close();
-									system( "cls" );
-									ShowWindow( GetConsoleWindow(), SW_SHOW );
-									std::cout << "Connection lost. Press any key to return to menu...\n";
-									if( _getch() == 0xE0 )
-										_getch();
-									ShowWindow( GetConsoleWindow(), SW_HIDE );
-									isStarted = false;
-									GoMenu( window );
-									return;
-								}
+						// transmitem mutarea la celalalt jucator
+						if( !isSinglePlayer ) {
+							sf::Packet packetSent;
+							packetSent << oldcoords.x << oldcoords.y << coords.x << coords.y << moveType;
+							tcpSocket.setBlocking( true );
+							// if connection is lost, return to menu
+							if( tcpSocket.send( packetSent ) == sf::Socket::Status::Disconnected ) {
+								tcpSocket.disconnect();
+								tcpListener.close();
+								system( "cls" );
+								ShowWindow( GetConsoleWindow(), SW_SHOW );
+								std::cout << "Connection lost. Press any key to return to menu...\n";
+								if( _getch() == 0xE0 )
+									_getch();
+								ShowWindow( GetConsoleWindow(), SW_HIDE );
+								isStarted = false;
+								GoMenu( window );
+								return;
 							}
 						}
 					}
 				}
 			}
-			// asteptam mutare de la celalalt jucator
-			else {
-				sf::Packet packetReceived2;
-				tcpSocket.setBlocking( false );
-				sf::Socket::Status status = tcpSocket.receive( packetReceived2 );
-				// daca am primit pachetul, reprezentam mutarea local
-				if( status == sf::Socket::Status::Done ) {
-					if( packetReceived2 >> oldcoords.x >> oldcoords.y >> coords.x >> coords.y >> moveType )
-						Move( oldcoords, coords, moveType );
-					// if packet is lost, return to menu
-					else {
-						tcpSocket.disconnect();
-						tcpListener.close();
-						system( "cls" );
-						ShowWindow( GetConsoleWindow(), SW_SHOW );
-						std::cout << "Connection lost. Press any key to return to menu...\n";
-						if( _getch() == 0xE0 )
-							_getch();
-						ShowWindow( GetConsoleWindow(), SW_HIDE );
-						isStarted = false;
-						GoMenu( window );
-						return;
-					}
-				} else
-					// if connection is lost, return to menu
-					if( status == sf::Socket::Status::Disconnected ) {
-						tcpSocket.disconnect();
-						tcpListener.close();
-						system( "cls" );
-						ShowWindow( GetConsoleWindow(), SW_SHOW );
-						std::cout << "Connection lost. Press any key to return to menu...\n";
-						if( _getch() == 0xE0 )
-							_getch();
-						ShowWindow( GetConsoleWindow(), SW_HIDE );
-						isStarted = false;
-						GoMenu( window );
-						return;
-					}
-			}
 		}
-	} else {
-		GoEnd( window );
-		return;
+		// asteptam mutare de la celalalt jucator
+		else {
+			sf::Packet packetReceived2;
+			tcpSocket.setBlocking( false );
+			sf::Socket::Status status = tcpSocket.receive( packetReceived2 );
+			// daca am primit pachetul, reprezentam mutarea local
+			if( status == sf::Socket::Status::Done ) {
+				if( packetReceived2 >> oldcoords.x >> oldcoords.y >> coords.x >> coords.y >> moveType )
+					Move( oldcoords, coords, moveType );
+				// if packet is lost, return to menu
+				else {
+					tcpSocket.disconnect();
+					tcpListener.close();
+					system( "cls" );
+					ShowWindow( GetConsoleWindow(), SW_SHOW );
+					std::cout << "Connection lost. Press any key to return to menu...\n";
+					if( _getch() == 0xE0 )
+						_getch();
+					ShowWindow( GetConsoleWindow(), SW_HIDE );
+					isStarted = false;
+					GoMenu( window );
+					return;
+				}
+			} else
+				// if connection is lost, return to menu
+				if( status == sf::Socket::Status::Disconnected ) {
+					tcpSocket.disconnect();
+					tcpListener.close();
+					system( "cls" );
+					ShowWindow( GetConsoleWindow(), SW_SHOW );
+					std::cout << "Connection lost. Press any key to return to menu...\n";
+					if( _getch() == 0xE0 )
+						_getch();
+					ShowWindow( GetConsoleWindow(), SW_HIDE );
+					isStarted = false;
+					GoMenu( window );
+					return;
+				}
+		}
 	}
 
 	gfx.Clear();
@@ -308,12 +280,14 @@ void Game::GoEnd( sf::RenderWindow& window ) {
 				break;
 			case sf::Event::KeyPressed:
 				// restart the game
-				if( event.key.code == sf::Keyboard::R && !wantsRestart ) {
+				if( event.key.code == sf::Keyboard::R && !wantsRestart && !refusedRestart ) {
 					if( !isSinglePlayer ) {
 						wantsRestart = true;
 						// transmitem faptul ca vrem rematch
 						sf::Packet packetSent;
-						packetSent << true;
+						// request = 1 inseamna REMATCH
+						int request = 1;
+						packetSent << request;
 						tcpSocket.setBlocking( true );
 						if( tcpSocket.send( packetSent ) == sf::Socket::Status::Disconnected ) {
 							refusedRestart = true;
@@ -344,14 +318,16 @@ void Game::GoEnd( sf::RenderWindow& window ) {
 				break;
 		}
 
-	if( !isSinglePlayer ) {
+	// asteptam cerere de rematch
+	if( !isSinglePlayer && !refusedRestart ) {
 		sf::Packet packetReceived;
 		tcpSocket.setBlocking( false );
 		sf::Socket::Status status = tcpSocket.receive( packetReceived );
-		// daca am primit pachetul, verificam daca a acceptat rematch
+		// daca am primit pachetul, verificam daca a cerut rematch
+		// response = 1 inseamna REMATCH
 		if( status == sf::Socket::Status::Done ) {
-			bool response;
-			if( packetReceived >> response && response ) {
+			int response;
+			if( packetReceived >> response && response == 1 ) {
 				pendingRestart = true;
 				// daca si noi voiam rematch, dam rematch
 				if( wantsRestart ) {

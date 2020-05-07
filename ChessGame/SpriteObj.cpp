@@ -9,7 +9,7 @@ SpriteObj::SpriteObj( SpriteObj&& other ) noexcept
 SpriteObj::SpriteObj( const std::string& filename, const sf::Vector2f& pos, const sf::Vector2f& scale ) {
 	_pos = pos;
 	if( !_texture.loadFromFile( filename ) )
-		throw("Cannot load file: " + filename);
+		throw EXCEPT("Cannot load file: " + filename);
 	_sprite.setTexture( _texture );
 	_sprite.setScale( scale );
 	_sprite.move( _pos );
