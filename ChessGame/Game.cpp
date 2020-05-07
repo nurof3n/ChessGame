@@ -58,7 +58,9 @@ void Game::Setup() {
 }
 // remember to reinitialize variables here
 void Game::Restart() noexcept {
-	//endSound.stop();
+	moveSound.stop();
+	endSound.stop();
+	endSoundPlaying = false;
 	_tabla.Setup();
 	crtColor = Piesa::Color::ALB;
 	round = 0;
@@ -80,6 +82,10 @@ void Game::Restart() noexcept {
 }
 
 void Game::GoMenu( sf::RenderWindow& window ) {
+	moveSound.stop();
+	endSound.stop();
+	endSoundPlaying = false;
+
 	static Button buttonPlaySingle( "Content/PlayButtonSingle.png", { 128.0f, 194.0f } );
 	static Button buttonPlayMulti( "Content/PlayButtonMulti.png", { 128.0f, 252.0f } );
 
@@ -115,6 +121,8 @@ void Game::GoMenu( sf::RenderWindow& window ) {
 	gfx.Draw( _tabla.GetSprite() );
 	gfx.Draw( buttonPlaySingle.GetSprite() );
 	gfx.Draw( buttonPlayMulti.GetSprite() );
+
+	// afisam
 	gfx.Display();
 }
 
@@ -148,7 +156,6 @@ void Game::Go( sf::RenderWindow& window ) {
 				}
 				break;
 		}
-
 
 	// aici preluam comenzile din mouse, daca jucam singleplayer, sau suntem la rand in multiplayer
 	static sf::Vector2f oldpos;
@@ -379,11 +386,17 @@ void Game::GoEnd( sf::RenderWindow& window ) {
 	}
 
 	// I NEED TO FIGURE THIS OUT
+	if( !endSoundPlaying ) {
+		std::string audioFile2 = isCheckMate ? "Content/Audio/bomb.wav" : "Content/Audio/spayed.wav";
+		if( !endSoundBuffer.loadFromFile( audioFile2 ) )
+			throw EXCEPT( "Cannot load file: " + audioFile2 );
+		endSound.setBuffer( endSoundBuffer );
+		endSound.setVolume( 60 );
+		endSound.play();
+		endSoundPlaying = true;
+	}
 
-	/*if( !endSoundBuffer.loadFromFile( isCheckMate ? "Content/Audio/bomb.wav" : "Content/Audio/spayed.wav" ) )
-		throw EXCEPT( "Cannot load file: " + std::string( isCheckMate ? "Content/Audio/bomb.wav" : "Content/Audio/spayed.wav" ) );
-	endSound.play();*/
-
+	// afisam
 	gfx.Display();
 }
 

@@ -45,6 +45,7 @@ private:
 	bool isStaleMate = false;
 	bool isSinglePlayer;
 	bool isFinished = false;
+	bool endSoundPlaying = false;
 	std::string pgnFilename = "lastmatch.pgn";
 	std::ofstream pgnOutput;
 	sf::SoundBuffer moveSoundBuffer, endSoundBuffer;
