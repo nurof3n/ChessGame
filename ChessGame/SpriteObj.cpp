@@ -16,7 +16,7 @@ SpriteObj::SpriteObj( const std::string& filename, const sf::Vector2f& pos, cons
 }
 
 void SpriteObj::Draw( Graphics& gfx ) {
-	gfx.DrawSprite( GetSprite() );
+	gfx.Draw( GetSprite() );
 }
 
 sf::Vector2f SpriteObj::GetPos() const noexcept {

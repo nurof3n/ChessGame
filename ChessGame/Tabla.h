@@ -28,7 +28,7 @@ public:
 	~Tabla() noexcept;
 
 	void Setup();
-	void DrawPiese( Graphics& gfx );
+	void DrawPiese( Graphics& gfx, sf::Shader* shader = nullptr );
 	Piesa* GetPiesa( const sf::Vector2i& coords ) const noexcept;
 	sf::Vector2i GetPosRege( const Piesa::Color& color ) const noexcept;
 	void SetPointer( const sf::Vector2i& coords, Piesa* piesa ) noexcept;

@@ -7,6 +7,7 @@
 #include <thread>
 #include <chrono>
 #include <windows.h>
+#include <cmath>
 
 #define SKIP_INTRO
 
@@ -109,7 +110,12 @@ bool Game::GoChooseSide( sf::RenderWindow& window ) {
 		}
 
 	gfx.Clear();
-	gfx.Draw( _tabla.GetSprite() );
+	sf::Shader blurShader;
+	if( !blurShader.loadFromFile( "Shaders/gaussblur.frag", sf::Shader::Fragment ) )
+		throw EXCEPT( "Cannot load file: Shaders/gaussblur.frag" );
+	blurShader.setUniform( "texture", sf::Shader::CurrentTexture );
+	blurShader.setUniform( "blur_radius", 0.005f );
+	gfx.Draw( _tabla.GetSprite(), &blurShader );
 	gfx.Draw( text.GetSprite() );
 	gfx.Draw( buttonWhite.GetSprite() );
 	gfx.Draw( buttonBlack.GetSprite() );
@@ -155,7 +161,12 @@ void Game::GoMenu( sf::RenderWindow& window ) {
 		}
 
 	gfx.Clear();
-	gfx.Draw( _tabla.GetSprite() );
+	sf::Shader blurShader;
+	if( !blurShader.loadFromFile( "Shaders/gaussblur.frag", sf::Shader::Fragment ) )
+		throw EXCEPT( "Cannot load file: Shaders/gaussblur.frag" );
+	blurShader.setUniform( "texture", sf::Shader::CurrentTexture );
+	blurShader.setUniform( "blur_radius", 0.005f );
+	gfx.Draw( _tabla.GetSprite(), &blurShader );
 	gfx.Draw( buttonPlaySingle.GetSprite() );
 	gfx.Draw( buttonPlayMulti.GetSprite() );
 
@@ -376,18 +387,25 @@ void Game::GoEnd( sf::RenderWindow& window ) {
 
 	gfx.Clear();
 	// desenam tabla
-	gfx.Draw( _tabla.GetSprite() );
-	// coloram patratelul din care am mutat si cel in care am mutat
-	if( patratInit != nullptr )
-		gfx.Draw( patratInit->GetSprite() );
-	if( patratFinal != nullptr )
-		gfx.Draw( patratFinal->GetSprite() );
-	// desenam piesele de pe tabla
-	_tabla.DrawPiese( gfx );
-	// desenam piesa pe care o avem selectata
-	if( piesaTinuta != nullptr )
-		gfx.Draw( piesaTinuta->GetSprite() );
+	sf::Shader blurShader;
+	if( !blurShader.loadFromFile( "Shaders/gaussblur.frag", sf::Shader::Fragment ) )
+		throw EXCEPT( "Cannot load file: Shaders/gaussblur.frag" );
+	blurShader.setUniform( "texture", sf::Shader::CurrentTexture );
+	blurShader.setUniform( "blur_radius", 0.005f );
+	gfx.Draw( _tabla.GetSprite(), &blurShader );
 
+	// coloram patratelul din care am mutat si cel in care am mutat
+	if( patratInit != nullptr ) {
+		blurShader.setUniform( "texture", sf::Shader::CurrentTexture );
+		gfx.Draw( patratInit->GetSprite(), &blurShader );
+	}	
+	if( patratFinal != nullptr ) {
+		blurShader.setUniform( "texture", sf::Shader::CurrentTexture );
+		gfx.Draw( patratFinal->GetSprite(), &blurShader );
+	}
+		
+	// desenam piesele de pe tabla
+	_tabla.DrawPiese( gfx, &blurShader );
 
 	if( refusedRestart ) {
 		static SpriteObj refusedRematch( "Content/RefusedRematch.png" );

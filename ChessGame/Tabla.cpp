@@ -53,11 +53,17 @@ void Tabla::Setup() {
 	turnrightMoved[0] = turnrightMoved[1] = false;
 }
 
-void Tabla::DrawPiese( Graphics& gfx ) {
+void Tabla::DrawPiese( Graphics& gfx, sf::Shader* shader ) {
 	for( int i = 1; i <= 8; ++i )
 		for( int j = 1; j <= 8; ++j )
-			if( _tabla[i][j] != nullptr )
-				gfx.DrawSprite( _tabla[i][j]->GetSprite() );
+			if( _tabla[i][j] != nullptr ) {
+				if( shader != nullptr ) {
+					shader->setUniform( "texture", sf::Shader::CurrentTexture );
+					shader->setUniform( "blur_radius", 0.037f );
+				}
+				gfx.Draw( _tabla[i][j]->GetSprite(), shader );
+			}
+
 }
 
 Piesa* Tabla::GetPiesa( const sf::Vector2i& coords ) const noexcept {

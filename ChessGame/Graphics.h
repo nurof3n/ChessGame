@@ -15,8 +15,7 @@ public:
 	sf::RenderWindow& GetWindow() noexcept;
 	void Setup();
 	void Clear() noexcept;
-	void Draw( const sf::Sprite& );
-	void DrawSprite( const sf::Sprite& );
+	void Draw( const sf::Drawable& drawable, const sf::RenderStates& states = sf::RenderStates::Default );
 	void Display();
 	bool IsInWindow( const sf::Vector2f& );
 private:

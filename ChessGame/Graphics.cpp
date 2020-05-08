@@ -27,12 +27,8 @@ void Graphics::Clear() noexcept {
 	window.clear();
 }
 
-void Graphics::Draw( const sf::Sprite& sprite ) {
-	DrawSprite( sprite );
-}
-
-void Graphics::DrawSprite( const sf::Sprite& sprite ) {
-	window.draw( sprite );
+void Graphics::Draw( const sf::Drawable& drawable, const sf::RenderStates& states ) {
+	window.draw( drawable, states );
 }
 
 void Graphics::Display() {
