@@ -322,7 +322,7 @@ bool Tabla::IsAttacking( Piesa::Color attackingColor, sf::Vector2i coords ) cons
 std::string Tabla::GetMoveString( sf::Vector2i oldcoords, sf::Vector2i coords, int moveType ) {
 	std::string moveString;
 	if( moveType & MV_CASTLING )
-		return oldcoords.x < coords.x ? "O-O-O" : "O-O";
+		return oldcoords.x > coords.x ? "O-O-O" : "O-O";
 
 	auto piece = _tabla[oldcoords.x][oldcoords.y];
 	Piesa::Piese type = piece->GetType();
