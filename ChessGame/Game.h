@@ -23,7 +23,11 @@ public:
 	const Game& operator=( const Game& ) = delete;
 	void Setup();
 	void Restart() noexcept;
+	bool GoChooseSide( sf::RenderWindow& window );
 	void GoMenu( sf::RenderWindow& window );
+	void PressAnyKeyToReturnToMenu();
+	void ConnectionLost( sf::RenderWindow& window );
+	void CloseConnection();
 	void Go( sf::RenderWindow& window );
 	void GoEnd( sf::RenderWindow& window );
 	void Move( sf::Vector2i oldcoords, sf::Vector2i coords, int moveType );
@@ -55,5 +59,6 @@ private:
 	Piesa* piesaTinuta = nullptr;
 	sf::TcpSocket tcpSocket;
 	sf::TcpListener tcpListener;
+	bool isServer = false;
 };
 

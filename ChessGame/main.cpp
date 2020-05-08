@@ -6,6 +6,7 @@ int main() {
 		Game& game = Game::GetInstance();
 		game.Setup();
 		sf::RenderWindow& window = game.gfx.GetWindow();
+		window.setVerticalSyncEnabled( true );
 		while( window.isOpen() ) {
 			game.Go( window );
 		}

@@ -14,11 +14,12 @@ using namespace std::chrono_literals;
 
 Graphics& Game::gfx = Graphics::GetInstance();
 
+// singleton
 Game& Game::GetInstance() noexcept {
 	static Game _instance;
 	return _instance;
 }
-
+// intro in console
 void Game::Setup() {
 	ShowWindow( GetConsoleWindow(), SW_SHOW );
 
@@ -80,7 +81,45 @@ void Game::Restart() noexcept {
 	pgnOutput.close();
 	pgnOutput.open( pgnFilename );
 }
+// returns true if side has been chosen or connection failed (have to check for this after the return)
+bool Game::GoChooseSide( sf::RenderWindow& window ) {
+	static Button buttonWhite( "Content/Piese/Pion_alb.png", { 64.0f, 200.0f }, { 4.0, 4.0 } );
+	static Button buttonBlack( "Content/Piese/Pion_negru.png", { 320.0f, 200.0f }, { 4.0, 4.0 } );
+	static SpriteObj text( isServer ? "Content/ChooseSide.png" : "Content/ChooseSideWait.png" );
 
+	sf::Event event;
+	while( window.pollEvent( event ) )
+		switch( event.type ) {
+			case sf::Event::Closed:
+				CloseConnection();
+				window.close();
+				return false;
+			case sf::Event::MouseButtonPressed:
+				if( event.mouseButton.button == sf::Mouse::Left )
+					// only the server can choose its side
+					if( isServer ) {
+						if( buttonWhite.mouseIsOver( window ) ) {
+							multiplayerColor = Piesa::Color::ALB;
+							return true;
+						} else if( buttonBlack.mouseIsOver( window ) ) {
+							multiplayerColor = Piesa::Color::NEGRU;
+							return true;
+						}
+					}
+		}
+
+	gfx.Clear();
+	gfx.Draw( _tabla.GetSprite() );
+	gfx.Draw( text.GetSprite() );
+	gfx.Draw( buttonWhite.GetSprite() );
+	gfx.Draw( buttonBlack.GetSprite() );
+
+	// afisam
+	gfx.Display();
+
+	return false;
+}
+// menu loop
 void Game::GoMenu( sf::RenderWindow& window ) {
 	moveSound.stop();
 	endSound.stop();
@@ -93,15 +132,14 @@ void Game::GoMenu( sf::RenderWindow& window ) {
 	while( window.pollEvent( event ) )
 		switch( event.type ) {
 			case sf::Event::Closed:
+				CloseConnection();
 				window.close();
 				return;
-				break;
 			case sf::Event::MouseButtonPressed:
 				if( event.mouseButton.button == sf::Mouse::Left ) {
 					// start singleplayer game
 					if( buttonPlaySingle.mouseIsOver( window ) ) {
 						Restart();
-						isStarted = true;
 						isSinglePlayer = true;
 						return;
 					}
@@ -109,7 +147,6 @@ void Game::GoMenu( sf::RenderWindow& window ) {
 					else if( buttonPlayMulti.mouseIsOver( window ) ) {
 						if( EstablishConnection() ) {
 							Restart();
-							isStarted = true;
 							isSinglePlayer = false;
 						}
 						return;
@@ -125,7 +162,30 @@ void Game::GoMenu( sf::RenderWindow& window ) {
 	// afisam
 	gfx.Display();
 }
-
+// shows the message and waits for key input to return to menu (mandatory call of GoMenu after this if called from outside of GoMenu!)
+void Game::PressAnyKeyToReturnToMenu() {
+	ShowWindow( GetConsoleWindow(), SW_SHOW );
+	std::cout << "Press any key to return to menu...";
+	// throw key away, and if it was a function key or arrow key, throw again !!!
+	if( _getch() == 0xE0 )
+		_getch();
+	ShowWindow( GetConsoleWindow(), SW_HIDE );
+}
+// says that connection was lost and waits for input to return to menu (mandatory call of GoMenu after this if called from outside of GoMenu!)
+void Game::ConnectionLost( sf::RenderWindow& window ) {
+	CloseConnection();
+	system( "cls" );
+	std::cout << "Connection lost.\n";
+	PressAnyKeyToReturnToMenu();
+	isStarted = false;
+}
+// closes the connection
+void Game::CloseConnection() {
+	isServer = false;
+	tcpSocket.disconnect();
+	tcpListener.close();
+}
+// main game loop
 void Game::Go( sf::RenderWindow& window ) {
 	if( !isStarted ) {
 		GoMenu( window );
@@ -140,18 +200,15 @@ void Game::Go( sf::RenderWindow& window ) {
 	while( window.pollEvent( event ) )
 		switch( event.type ) {
 			case sf::Event::Closed:
+				CloseConnection();
 				window.close();
 				return;
-				break;
 			case sf::Event::KeyPressed:
 				// go to the menu
 				if( event.key.code == sf::Keyboard::M && isStarted ) {
-					//endSound.stop();
 					wantsRestart = false;
 					isStarted = false;
-					tcpSocket.disconnect();
-					tcpListener.close();
-					GoMenu( window );
+					CloseConnection();
 					return;
 				}
 				break;
@@ -200,19 +257,8 @@ void Game::Go( sf::RenderWindow& window ) {
 							packetSent << oldcoords.x << oldcoords.y << coords.x << coords.y << moveType;
 							tcpSocket.setBlocking( true );
 							// if connection is lost, return to menu
-							if( tcpSocket.send( packetSent ) == sf::Socket::Status::Disconnected ) {
-								tcpSocket.disconnect();
-								tcpListener.close();
-								system( "cls" );
-								ShowWindow( GetConsoleWindow(), SW_SHOW );
-								std::cout << "Connection lost. Press any key to return to menu...\n";
-								if( _getch() == 0xE0 )
-									_getch();
-								ShowWindow( GetConsoleWindow(), SW_HIDE );
-								isStarted = false;
-								GoMenu( window );
-								return;
-							}
+							if( tcpSocket.send( packetSent ) == sf::Socket::Status::Disconnected )
+								ConnectionLost( window );
 						}
 					}
 				}
@@ -228,34 +274,12 @@ void Game::Go( sf::RenderWindow& window ) {
 				if( packetReceived2 >> oldcoords.x >> oldcoords.y >> coords.x >> coords.y >> moveType )
 					Move( oldcoords, coords, moveType );
 				// if packet is lost, return to menu
-				else {
-					tcpSocket.disconnect();
-					tcpListener.close();
-					system( "cls" );
-					ShowWindow( GetConsoleWindow(), SW_SHOW );
-					std::cout << "Connection lost. Press any key to return to menu...\n";
-					if( _getch() == 0xE0 )
-						_getch();
-					ShowWindow( GetConsoleWindow(), SW_HIDE );
-					isStarted = false;
-					GoMenu( window );
-					return;
-				}
+				else
+					ConnectionLost( window );
 			} else
 				// if connection is lost, return to menu
-				if( status == sf::Socket::Status::Disconnected ) {
-					tcpSocket.disconnect();
-					tcpListener.close();
-					system( "cls" );
-					ShowWindow( GetConsoleWindow(), SW_SHOW );
-					std::cout << "Connection lost. Press any key to return to menu...\n";
-					if( _getch() == 0xE0 )
-						_getch();
-					ShowWindow( GetConsoleWindow(), SW_HIDE );
-					isStarted = false;
-					GoMenu( window );
-					return;
-				}
+				if( status == sf::Socket::Status::Disconnected )
+					ConnectionLost( window );
 		}
 	}
 
@@ -276,15 +300,15 @@ void Game::Go( sf::RenderWindow& window ) {
 	// afisam ceea ce am desenat in buffer 
 	gfx.Display();
 }
-
+// endgame loop
 void Game::GoEnd( sf::RenderWindow& window ) {
 	sf::Event event;
 	while( window.pollEvent( event ) )
 		switch( event.type ) {
 			case sf::Event::Closed:
+				CloseConnection();
 				window.close();
 				return;
-				break;
 			case sf::Event::KeyPressed:
 				// restart the game
 				if( event.key.code == sf::Keyboard::R && !wantsRestart && !refusedRestart ) {
@@ -299,8 +323,7 @@ void Game::GoEnd( sf::RenderWindow& window ) {
 						if( tcpSocket.send( packetSent ) == sf::Socket::Status::Disconnected ) {
 							refusedRestart = true;
 							wantsRestart = false;
-							tcpSocket.disconnect();
-							tcpListener.close();
+							CloseConnection();
 						}
 						// daca si celalalt voia rematch, dam rematch
 						else if( pendingRestart ) {
@@ -314,12 +337,9 @@ void Game::GoEnd( sf::RenderWindow& window ) {
 				}
 				// go to the menu
 				else if( event.key.code == sf::Keyboard::M ) {
-					//endSound.stop();
 					wantsRestart = false;
 					isStarted = false;
-					tcpSocket.disconnect();
-					tcpListener.close();
-					GoMenu( window );
+					CloseConnection();
 					return;
 				}
 				break;
@@ -344,15 +364,13 @@ void Game::GoEnd( sf::RenderWindow& window ) {
 			} else {
 				refusedRestart = true;
 				wantsRestart = false;
-				tcpSocket.disconnect();
-				tcpListener.close();
+				CloseConnection();
 			}
 		} else
 			if( status == sf::Socket::Status::Disconnected ) {
 				refusedRestart = true;
 				wantsRestart = false;
-				tcpSocket.disconnect();
-				tcpListener.close();
+				CloseConnection();
 			}
 	}
 
@@ -385,7 +403,6 @@ void Game::GoEnd( sf::RenderWindow& window ) {
 		gfx.Draw( checkmate.GetSprite() );
 	}
 
-	// I NEED TO FIGURE THIS OUT
 	if( !endSoundPlaying ) {
 		std::string audioFile2 = isCheckMate ? "Content/Audio/bomb.wav" : "Content/Audio/spayed.wav";
 		if( !endSoundBuffer.loadFromFile( audioFile2 ) )
@@ -399,7 +416,6 @@ void Game::GoEnd( sf::RenderWindow& window ) {
 	// afisam
 	gfx.Display();
 }
-
 // mutare fara verificare; pentru verificare se foloseste clasa Tabla
 void Game::Move( sf::Vector2i oldcoords, sf::Vector2i coords, int moveType ) {
 	// mai intai inregistram mutarea!
@@ -454,7 +470,7 @@ void Game::Move( sf::Vector2i oldcoords, sf::Vector2i coords, int moveType ) {
 	} else
 		crtColor = Piesa::OtherColor( crtColor );
 }
-
+// logs the move into pgn format
 void Game::LogMove( sf::Vector2i oldcoords, sf::Vector2i coords, int moveType ) {
 	std::string moveString = _tabla.GetMoveString( oldcoords, coords, moveType );
 	auto color = _tabla.GetPiesa( oldcoords )->GetColor();
@@ -463,18 +479,17 @@ void Game::LogMove( sf::Vector2i oldcoords, sf::Vector2i coords, int moveType ) 
 		pgnOutput << ' ' << ++round << '.';
 	pgnOutput << ' ' << moveString;
 }
-
+// writes custom stream into the pgn file
 void Game::WriteLog( std::string output ) {
 	pgnOutput << output;
 }
-
 // forward port 50000 for server ok
 bool Game::EstablishConnection() {
 	system( "cls" );
 	ShowWindow( GetConsoleWindow(), SW_SHOW );
 	std::cout << "Enter IP or give the other player your IP to connect\n";
 	std::cout << "To be able to receive incoming connections, you need to forward port 50000\n";
-	std::cout << "Type \\connect <ip> or \\wait...\n";
+	std::cout << "Type \\connect <ip>, \\wait or \\close\n";
 	std::string command, ip;
 	bool connecting = false;
 	while( true ) {
@@ -485,42 +500,85 @@ bool Game::EstablishConnection() {
 			break;
 		} else if( command == "\\wait" ) {
 			break;
+		} else if( command == "\\close" ) {
+			ShowWindow( GetConsoleWindow(), SW_HIDE );
+			return false;
 		} else
 			std::cout << "Unrecognized command " << command << '\n';
 	}
 
+	auto& window = gfx.GetWindow();
 	if( connecting ) {
+		isServer = false;
+
 		std::cout << "Connecting to host...\n";
 		tcpSocket.setBlocking( true );
 		sf::Socket::Status status = tcpSocket.connect( ip, 50000, sf::seconds( 5.0f ) );
 		if( status != sf::Socket::Done ) {
-			std::cout << "\nConnection failed. Press any key to return to menu...\n";
-			if( _getch() == 0xE0 )
-				_getch();
-			ShowWindow( GetConsoleWindow(), SW_HIDE );
+			ConnectionLost( window );
 			return false;
 		} else {
 			std::cout << "\nConnection successful! Starting game...\n";
 			ShowWindow( GetConsoleWindow(), SW_HIDE );
-			multiplayerColor = Piesa::Color::ALB;
+
+			// waiting for other player to choose side (because we are not the server)
+			sf::Packet packetReceived;
+			tcpSocket.setBlocking( false );
+			while( !GoChooseSide( window ) ) {
+				if( !window.isOpen() )
+					return false;
+				sf::Socket::Status status = tcpSocket.receive( packetReceived );
+				if( status == sf::Socket::Status::Done ) {
+					int response;
+					if( packetReceived >> response ) {
+						auto color = static_cast< Piesa::Color >(response);
+						if( response >= 0 && response <= 1 ) {
+							multiplayerColor = Piesa::OtherColor( color );
+							break;
+						} else {
+							ConnectionLost( window );
+							return false;
+						}
+					} else {
+						ConnectionLost( window );
+						return false;
+					}
+				} else
+					if( status == sf::Socket::Status::Disconnected ) {
+						ConnectionLost( window );
+						return false;
+					}
+			}
+
 			return true;
 		}
 	} else {
+		isServer = true;
+
 		if( tcpListener.listen( 50000 ) != sf::Socket::Status::Done ) {
-			std::cout << "\nCannot listen to port 50000. Press any key to return to menu...\n";
-			if( _getch() == 0xE0 )
-				_getch();
-			ShowWindow( GetConsoleWindow(), SW_HIDE );
+			std::cout << "\nCannot listen to port 50000.\n";
+			CloseConnection();
+			PressAnyKeyToReturnToMenu();
 			return false;
 		}
 
-		std::cout << "Waiting for connection request... Press any key to abort and return to menu...\n";
+		std::cout << "Waiting for connection request...\nPress any key to abort and return to menu...\n";
 		tcpListener.setBlocking( false );
 		while( !_kbhit() )
 			if( tcpListener.accept( tcpSocket ) == sf::Socket::Status::Done ) {
 				std::cout << "\nConnection successful! Starting game...\n";
 				ShowWindow( GetConsoleWindow(), SW_HIDE );
-				multiplayerColor = Piesa::Color::NEGRU;
+
+				// choose side
+				while( !GoChooseSide( window ) )
+					if( !window.isOpen() )
+						return false;
+				sf::Packet packetSent;
+				packetSent << ( int )multiplayerColor;
+				if( tcpSocket.send( packetSent ) == sf::Socket::Status::Disconnected ) {
+					ConnectionLost( window );
+					return false;
+				}
 				return true;
 			}
 		// throw key away, and if it was a function key or arrow key, throw again !!!
