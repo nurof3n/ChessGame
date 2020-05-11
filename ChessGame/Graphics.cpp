@@ -23,16 +23,16 @@ void Graphics::Setup() {
 	SetWindowLong( hWnd, GWL_STYLE, dwStyle );
 }
 
-void Graphics::Clear() noexcept {
+void Graphics::BeginFrame() {
 	window.clear();
+}
+
+void Graphics::EndFrame() {
+	window.display();
 }
 
 void Graphics::Draw( const sf::Drawable& drawable, const sf::RenderStates& states ) {
 	window.draw( drawable, states );
-}
-
-void Graphics::Display() {
-	window.display();
 }
 
 bool Graphics::IsInWindow( const sf::Vector2f& pos ) {

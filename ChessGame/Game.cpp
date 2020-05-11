@@ -13,6 +13,12 @@
 
 using namespace std::chrono_literals;
 
+Button buttonPlaySingle( "Content/PlayButtonSingle.png", { 128.0f, 194.0f } );
+Button buttonPlayMulti( "Content/PlayButtonMulti.png", { 128.0f, 252.0f } );
+Button buttonWhite( "Content/Piese/Pion_alb.png", { 64.0f, 200.0f }, { 4.0, 4.0 } );
+Button buttonBlack( "Content/Piese/Pion_negru.png", { 320.0f, 200.0f }, { 4.0, 4.0 } );
+SpriteObj textChoose( "Content/ChooseSide.png" );
+
 Graphics& Game::gfx = Graphics::GetInstance();
 
 // singleton
@@ -60,9 +66,7 @@ void Game::Setup() {
 }
 // remember to reinitialize variables here
 void Game::Restart() noexcept {
-	moveSound.stop();
-	endSound.stop();
-	endSoundPlaying = false;
+	StopSounds();
 	_tabla.Setup();
 	crtColor = Piesa::Color::ALB;
 	round = 0;
@@ -71,8 +75,10 @@ void Game::Restart() noexcept {
 	pendingRestart = false;
 	isStarted = true;
 	isFinished = false;
+	isMenu = false;
 	isCheckMate = false;
 	isStaleMate = false;
+	isChoosingSides = false;
 	delete patratInit;
 	patratInit = nullptr;
 	delete patratFinal;
@@ -82,98 +88,7 @@ void Game::Restart() noexcept {
 	pgnOutput.close();
 	pgnOutput.open( pgnFilename );
 }
-// returns true if side has been chosen or connection failed (have to check for this after the return)
-bool Game::GoChooseSide( sf::RenderWindow& window ) {
-	static Button buttonWhite( "Content/Piese/Pion_alb.png", { 64.0f, 200.0f }, { 4.0, 4.0 } );
-	static Button buttonBlack( "Content/Piese/Pion_negru.png", { 320.0f, 200.0f }, { 4.0, 4.0 } );
-	static SpriteObj text( isServer ? "Content/ChooseSide.png" : "Content/ChooseSideWait.png" );
-
-	sf::Event event;
-	while( window.pollEvent( event ) )
-		switch( event.type ) {
-			case sf::Event::Closed:
-				CloseConnection();
-				window.close();
-				return false;
-			case sf::Event::MouseButtonPressed:
-				if( event.mouseButton.button == sf::Mouse::Left )
-					// only the server can choose its side
-					if( isServer ) {
-						if( buttonWhite.mouseIsOver( window ) ) {
-							multiplayerColor = Piesa::Color::ALB;
-							return true;
-						} else if( buttonBlack.mouseIsOver( window ) ) {
-							multiplayerColor = Piesa::Color::NEGRU;
-							return true;
-						}
-					}
-		}
-
-	gfx.Clear();
-	sf::Shader blurShader;
-	if( !blurShader.loadFromFile( "Shaders/gaussblur.frag", sf::Shader::Fragment ) )
-		throw EXCEPT( "Cannot load file: Shaders/gaussblur.frag" );
-	blurShader.setUniform( "texture", sf::Shader::CurrentTexture );
-	blurShader.setUniform( "blur_radius", 0.005f );
-	gfx.Draw( _tabla.GetSprite(), &blurShader );
-	gfx.Draw( text.GetSprite() );
-	gfx.Draw( buttonWhite.GetSprite() );
-	gfx.Draw( buttonBlack.GetSprite() );
-
-	// afisam
-	gfx.Display();
-
-	return false;
-}
-// menu loop
-void Game::GoMenu( sf::RenderWindow& window ) {
-	moveSound.stop();
-	endSound.stop();
-	endSoundPlaying = false;
-
-	static Button buttonPlaySingle( "Content/PlayButtonSingle.png", { 128.0f, 194.0f } );
-	static Button buttonPlayMulti( "Content/PlayButtonMulti.png", { 128.0f, 252.0f } );
-
-	sf::Event event;
-	while( window.pollEvent( event ) )
-		switch( event.type ) {
-			case sf::Event::Closed:
-				CloseConnection();
-				window.close();
-				return;
-			case sf::Event::MouseButtonPressed:
-				if( event.mouseButton.button == sf::Mouse::Left ) {
-					// start singleplayer game
-					if( buttonPlaySingle.mouseIsOver( window ) ) {
-						Restart();
-						isSinglePlayer = true;
-						return;
-					}
-					// start multiplayer game
-					else if( buttonPlayMulti.mouseIsOver( window ) ) {
-						if( EstablishConnection() ) {
-							Restart();
-							isSinglePlayer = false;
-						}
-						return;
-					}
-				}
-		}
-
-	gfx.Clear();
-	sf::Shader blurShader;
-	if( !blurShader.loadFromFile( "Shaders/gaussblur.frag", sf::Shader::Fragment ) )
-		throw EXCEPT( "Cannot load file: Shaders/gaussblur.frag" );
-	blurShader.setUniform( "texture", sf::Shader::CurrentTexture );
-	blurShader.setUniform( "blur_radius", 0.005f );
-	gfx.Draw( _tabla.GetSprite(), &blurShader );
-	gfx.Draw( buttonPlaySingle.GetSprite() );
-	gfx.Draw( buttonPlayMulti.GetSprite() );
-
-	// afisam
-	gfx.Display();
-}
-// shows the message and waits for key input to return to menu (mandatory call of GoMenu after this if called from outside of GoMenu!)
+// shows the message and waits for key input to return to menu
 void Game::PressAnyKeyToReturnToMenu() {
 	ShowWindow( GetConsoleWindow(), SW_SHOW );
 	std::cout << "Press any key to return to menu...";
@@ -182,8 +97,8 @@ void Game::PressAnyKeyToReturnToMenu() {
 		_getch();
 	ShowWindow( GetConsoleWindow(), SW_HIDE );
 }
-// says that connection was lost and waits for input to return to menu (mandatory call of GoMenu after this if called from outside of GoMenu!)
-void Game::ConnectionLost( sf::RenderWindow& window ) {
+// says that connection was lost and waits for input to return to menu
+void Game::ConnectionLost() {
 	CloseConnection();
 	system( "cls" );
 	std::cout << "Connection lost.\n";
@@ -193,19 +108,76 @@ void Game::ConnectionLost( sf::RenderWindow& window ) {
 // closes the connection
 void Game::CloseConnection() {
 	isServer = false;
+	wantsRestart = false;
 	tcpSocket.disconnect();
 	tcpListener.close();
 }
-// main game loop
-void Game::Go( sf::RenderWindow& window ) {
-	if( !isStarted ) {
-		GoMenu( window );
-		return;
-	}
-	if( isFinished ) {
-		GoEnd( window );
-		return;
-	}
+// draws the objects on the screen
+void Game::ComposeFrame() {
+	static sf::Shader blurShader;
+	static sf::RenderStates renderStates;
+	if( !isStarted || isFinished ) {
+		if( !blurShader.loadFromFile( "Shaders/gaussblur.frag", sf::Shader::Fragment ) )
+			throw EXCEPT( "Cannot load file: Shaders/gaussblur.frag" );
+		blurShader.setUniform( "texture", sf::Shader::CurrentTexture );
+		blurShader.setUniform( "blur_radius", 0.005f );
+		renderStates = sf::RenderStates( &blurShader );
+	} else
+		renderStates = sf::RenderStates::Default;
+
+	gfx.Draw( _tabla.GetSprite(), renderStates );
+
+	if( isStarted && !isFinished ) {
+		if( patratInit != nullptr )
+			gfx.Draw( patratInit->GetSprite() );
+		if( patratFinal != nullptr )
+			gfx.Draw( patratFinal->GetSprite() );
+		_tabla.DrawPiese( gfx );
+		if( piesaTinuta != nullptr )
+			gfx.Draw( piesaTinuta->GetSprite() );
+	} else
+		if( !isStarted ) {
+			gfx.Draw( buttonPlaySingle.GetSprite() );
+			gfx.Draw( buttonPlayMulti.GetSprite() );
+		} else
+			if( isChoosingSides ) {
+				textChoose = SpriteObj( isServer ? "Content/ChooseSide.png" : "Content/ChooseSideWait.png" );
+
+				gfx.Draw( textChoose.GetSprite() );
+				gfx.Draw( buttonWhite.GetSprite() );
+				gfx.Draw( buttonBlack.GetSprite() );
+			} else
+				if( isFinished ) {
+					if( patratInit != nullptr ) {
+						blurShader.setUniform( "texture", sf::Shader::CurrentTexture );
+						gfx.Draw( patratInit->GetSprite(), &blurShader );
+					}
+					if( patratFinal != nullptr ) {
+						blurShader.setUniform( "texture", sf::Shader::CurrentTexture );
+						gfx.Draw( patratFinal->GetSprite(), &blurShader );
+					}
+
+					// desenam piesele de pe tabla, cu shaderul de blur
+					_tabla.DrawPiese( gfx, &blurShader );
+
+					if( refusedRestart ) {
+						static SpriteObj refusedRematch( "Content/RefusedRematch.png" );
+						gfx.Draw( refusedRematch.GetSprite() );
+					} else if( wantsRestart ) {
+						static SpriteObj restart( "Content/Restart.png" );
+						gfx.Draw( restart.GetSprite() );
+					} else if( pendingRestart ) {
+						static SpriteObj pending( "Content/PendingRematch.png" );
+						gfx.Draw( pending.GetSprite() );
+					} else {
+						static SpriteObj checkmate( isCheckMate ? "Content/CheckMate.png" : "Content/StaleMate.png" );
+						gfx.Draw( checkmate.GetSprite() );
+					}
+				}
+}
+// updates game logic
+void Game::UpdateModel() {
+	static auto& window = gfx.GetWindow();
 
 	sf::Event event;
 	while( window.pollEvent( event ) )
@@ -213,19 +185,173 @@ void Game::Go( sf::RenderWindow& window ) {
 			case sf::Event::Closed:
 				CloseConnection();
 				window.close();
+
 				return;
 			case sf::Event::KeyPressed:
 				// go to the menu
 				if( event.key.code == sf::Keyboard::M && isStarted ) {
-					wantsRestart = false;
 					isStarted = false;
+					isMenu = true;
 					CloseConnection();
+					StopSounds();
+
 					return;
-				}
+				} else
+					// restart the game
+					if( event.key.code == sf::Keyboard::R && isFinished ) {
+						if( !isSinglePlayer && !wantsRestart && !refusedRestart ) {
+							wantsRestart = true;
+							// transmitem faptul ca vrem rematch
+							sf::Packet packetSent;
+							// request = 1 inseamna REMATCH
+							int request = 1;
+							packetSent << request;
+							tcpSocket.setBlocking( true );
+							if( tcpSocket.send( packetSent ) == sf::Socket::Status::Disconnected ) {
+								refusedRestart = true;
+								CloseConnection();
+							}
+							// daca si celalalt voia rematch, dam rematch
+							else
+								if( pendingRestart ) {
+									Restart();
+
+									return;
+								}
+						} else {
+							Restart();
+
+							return;
+						}
+					}
 				break;
+			case sf::Event::MouseButtonPressed:
+				if( event.mouseButton.button == sf::Mouse::Left )
+					if( isMenu ) {
+						// start singleplayer game
+						if( buttonPlaySingle.mouseIsOver( window ) ) {
+							Restart();
+							isSinglePlayer = true;
+
+							return;
+						}
+						// start multiplayer game
+						else
+							if( buttonPlayMulti.mouseIsOver( window ) ) {
+								if( EstablishConnection() ) {
+									isChoosingSides = true;
+									isSinglePlayer = false;
+								}
+
+								return;
+							}
+					} else
+						if( isChoosingSides ) {
+							// the server chooses its side
+							if( isServer ) {
+								if( buttonWhite.mouseIsOver( window ) ) {
+									multiplayerColor = Piesa::Color::ALB;
+									sf::Packet packetSent;
+									packetSent << ( int )multiplayerColor;
+									tcpSocket.setBlocking( true );
+									if( tcpSocket.send( packetSent ) == sf::Socket::Status::Disconnected )
+										ConnectionLost();
+
+									return;
+								} else
+									if( buttonBlack.mouseIsOver( window ) ) {
+										multiplayerColor = Piesa::Color::NEGRU;
+										sf::Packet packetSent;
+										packetSent << ( int )multiplayerColor;
+										tcpSocket.setBlocking( true );
+										if( tcpSocket.send( packetSent ) == sf::Socket::Status::Disconnected )
+											ConnectionLost();
+
+										return;
+									}
+							}
+						}
 		}
 
-	// aici preluam comenzile din mouse, daca jucam singleplayer, sau suntem la rand in multiplayer
+	if( !isStarted )
+		return;
+	// if finished, play the end sound
+	if( isFinished ) {
+		// if multiplayer, wait for rematch
+		if( !isSinglePlayer && !refusedRestart ) {
+			sf::Packet packetReceived;
+			tcpSocket.setBlocking( false );
+			sf::Socket::Status status = tcpSocket.receive( packetReceived );
+			// daca am primit pachetul, verificam daca a cerut rematch
+			// response = 1 inseamna REMATCH
+			if( status == sf::Socket::Status::Done ) {
+				int response;
+				if( packetReceived >> response && response == 1 ) {
+					pendingRestart = true;
+					// daca si noi voiam rematch, dam rematch
+					if( wantsRestart ) {
+						Restart();
+
+						return;
+					}
+				} else {
+					refusedRestart = true;
+					CloseConnection();
+				}
+			} else
+				if( status == sf::Socket::Status::Disconnected ) {
+					refusedRestart = true;
+					CloseConnection();
+				}
+		}
+
+		if( !endSoundPlaying ) {
+			std::string audioFile2 = isCheckMate ? "Content/Audio/bomb.wav" : "Content/Audio/spayed.wav";
+			if( !endSoundBuffer.loadFromFile( audioFile2 ) )
+				throw EXCEPT( "Cannot load file: " + audioFile2 );
+			endSound.setBuffer( endSoundBuffer );
+			endSound.setVolume( 60 );
+			endSound.play();
+			endSoundPlaying = true;
+		}
+
+		return;
+	}
+	// waiting for other player to choose side if we are not the server
+	if( isChoosingSides && !isServer ) {
+		sf::Packet packetReceived;
+		tcpSocket.setBlocking( false );
+		sf::Socket::Status status = tcpSocket.receive( packetReceived );
+		if( status == sf::Socket::Status::Done ) {
+			int response;
+			if( packetReceived >> response ) {
+				auto color = static_cast< Piesa::Color >(response);
+				if( response >= 0 && response <= 1 ) {
+					multiplayerColor = Piesa::OtherColor( color );
+					Restart();
+
+					return;
+				} else {
+					ConnectionLost();
+
+					return;
+				}
+			} else {
+				ConnectionLost();
+
+				return;
+			}
+		} else
+			if( status == sf::Socket::Status::Disconnected ) {
+				ConnectionLost();
+
+				return;
+			}
+
+		return;
+	}
+
+	// actual chess game logic
 	static sf::Vector2f oldpos;
 	static bool IsLeftMouseHeld = false;
 	if( sf::Mouse::isButtonPressed( sf::Mouse::Left ) && (isSinglePlayer || multiplayerColor == crtColor) ) {
@@ -269,7 +395,7 @@ void Game::Go( sf::RenderWindow& window ) {
 							tcpSocket.setBlocking( true );
 							// if connection is lost, return to menu
 							if( tcpSocket.send( packetSent ) == sf::Socket::Status::Disconnected )
-								ConnectionLost( window );
+								ConnectionLost();
 						}
 					}
 				}
@@ -286,153 +412,20 @@ void Game::Go( sf::RenderWindow& window ) {
 					Move( oldcoords, coords, moveType );
 				// if packet is lost, return to menu
 				else
-					ConnectionLost( window );
+					ConnectionLost();
 			} else
 				// if connection is lost, return to menu
 				if( status == sf::Socket::Status::Disconnected )
-					ConnectionLost( window );
+					ConnectionLost();
 		}
 	}
-
-	gfx.Clear();
-	// desenam tabla
-	gfx.Draw( _tabla.GetSprite() );
-	// coloram patratelul din care am mutat si cel in care am mutat
-	if( patratInit != nullptr )
-		gfx.Draw( patratInit->GetSprite() );
-	if( patratFinal != nullptr )
-		gfx.Draw( patratFinal->GetSprite() );
-	// desenam piesele de pe tabla
-	_tabla.DrawPiese( gfx );
-	// desenam piesa pe care o avem selectata
-	if( piesaTinuta != nullptr )
-		gfx.Draw( piesaTinuta->GetSprite() );
-
-	// afisam ceea ce am desenat in buffer 
-	gfx.Display();
 }
-// endgame loop
-void Game::GoEnd( sf::RenderWindow& window ) {
-	sf::Event event;
-	while( window.pollEvent( event ) )
-		switch( event.type ) {
-			case sf::Event::Closed:
-				CloseConnection();
-				window.close();
-				return;
-			case sf::Event::KeyPressed:
-				// restart the game
-				if( event.key.code == sf::Keyboard::R && !wantsRestart && !refusedRestart ) {
-					if( !isSinglePlayer ) {
-						wantsRestart = true;
-						// transmitem faptul ca vrem rematch
-						sf::Packet packetSent;
-						// request = 1 inseamna REMATCH
-						int request = 1;
-						packetSent << request;
-						tcpSocket.setBlocking( true );
-						if( tcpSocket.send( packetSent ) == sf::Socket::Status::Disconnected ) {
-							refusedRestart = true;
-							wantsRestart = false;
-							CloseConnection();
-						}
-						// daca si celalalt voia rematch, dam rematch
-						else if( pendingRestart ) {
-							Restart();
-							return;
-						}
-					} else {
-						Restart();
-						return;
-					}
-				}
-				// go to the menu
-				else if( event.key.code == sf::Keyboard::M ) {
-					wantsRestart = false;
-					isStarted = false;
-					CloseConnection();
-					return;
-				}
-				break;
-		}
-
-	// asteptam cerere de rematch
-	if( !isSinglePlayer && !refusedRestart ) {
-		sf::Packet packetReceived;
-		tcpSocket.setBlocking( false );
-		sf::Socket::Status status = tcpSocket.receive( packetReceived );
-		// daca am primit pachetul, verificam daca a cerut rematch
-		// response = 1 inseamna REMATCH
-		if( status == sf::Socket::Status::Done ) {
-			int response;
-			if( packetReceived >> response && response == 1 ) {
-				pendingRestart = true;
-				// daca si noi voiam rematch, dam rematch
-				if( wantsRestart ) {
-					Restart();
-					return;
-				}
-			} else {
-				refusedRestart = true;
-				wantsRestart = false;
-				CloseConnection();
-			}
-		} else
-			if( status == sf::Socket::Status::Disconnected ) {
-				refusedRestart = true;
-				wantsRestart = false;
-				CloseConnection();
-			}
-	}
-
-	gfx.Clear();
-	// desenam tabla
-	sf::Shader blurShader;
-	if( !blurShader.loadFromFile( "Shaders/gaussblur.frag", sf::Shader::Fragment ) )
-		throw EXCEPT( "Cannot load file: Shaders/gaussblur.frag" );
-	blurShader.setUniform( "texture", sf::Shader::CurrentTexture );
-	blurShader.setUniform( "blur_radius", 0.005f );
-	gfx.Draw( _tabla.GetSprite(), &blurShader );
-
-	// coloram patratelul din care am mutat si cel in care am mutat
-	if( patratInit != nullptr ) {
-		blurShader.setUniform( "texture", sf::Shader::CurrentTexture );
-		gfx.Draw( patratInit->GetSprite(), &blurShader );
-	}	
-	if( patratFinal != nullptr ) {
-		blurShader.setUniform( "texture", sf::Shader::CurrentTexture );
-		gfx.Draw( patratFinal->GetSprite(), &blurShader );
-	}
-		
-	// desenam piesele de pe tabla
-	_tabla.DrawPiese( gfx, &blurShader );
-
-	if( refusedRestart ) {
-		static SpriteObj refusedRematch( "Content/RefusedRematch.png" );
-		gfx.Draw( refusedRematch.GetSprite() );
-	} else if( wantsRestart ) {
-		static SpriteObj restart( "Content/Restart.png" );
-		gfx.Draw( restart.GetSprite() );
-	} else if( pendingRestart ) {
-		static SpriteObj pending( "Content/PendingRematch.png" );
-		gfx.Draw( pending.GetSprite() );
-	} else {
-		static SpriteObj checkmate( isCheckMate ? "Content/CheckMate.png" : "Content/StaleMate.png" );
-		gfx.Draw( checkmate.GetSprite() );
-	}
-
-	if( !endSoundPlaying ) {
-		std::string audioFile2 = isCheckMate ? "Content/Audio/bomb.wav" : "Content/Audio/spayed.wav";
-		if( !endSoundBuffer.loadFromFile( audioFile2 ) )
-			throw EXCEPT( "Cannot load file: " + audioFile2 );
-		endSound.setBuffer( endSoundBuffer );
-		endSound.setVolume( 60 );
-		endSound.play();
-		endSoundPlaying = true;
-	}
-
-	// afisam
-	gfx.Display();
+// main game loop
+void Game::Go( sf::RenderWindow& window ) {
+	gfx.BeginFrame();
+	UpdateModel();
+	ComposeFrame();
+	gfx.EndFrame();
 }
 // mutare fara verificare; pentru verificare se foloseste clasa Tabla
 void Game::Move( sf::Vector2i oldcoords, sf::Vector2i coords, int moveType ) {
@@ -501,7 +494,7 @@ void Game::LogMove( sf::Vector2i oldcoords, sf::Vector2i coords, int moveType ) 
 void Game::WriteLog( std::string output ) {
 	pgnOutput << output;
 }
-// forward port 50000 for server ok
+// returns true if connection was established (forward port 50000 for server ok)
 bool Game::EstablishConnection() {
 	system( "cls" );
 	ShowWindow( GetConsoleWindow(), SW_SHOW );
@@ -520,6 +513,7 @@ bool Game::EstablishConnection() {
 			break;
 		} else if( command == "\\close" ) {
 			ShowWindow( GetConsoleWindow(), SW_HIDE );
+
 			return false;
 		} else
 			std::cout << "Unrecognized command " << command << '\n';
@@ -533,40 +527,12 @@ bool Game::EstablishConnection() {
 		tcpSocket.setBlocking( true );
 		sf::Socket::Status status = tcpSocket.connect( ip, 50000, sf::seconds( 5.0f ) );
 		if( status != sf::Socket::Done ) {
-			ConnectionLost( window );
+			ConnectionLost();
+
 			return false;
 		} else {
 			std::cout << "\nConnection successful! Starting game...\n";
 			ShowWindow( GetConsoleWindow(), SW_HIDE );
-
-			// waiting for other player to choose side (because we are not the server)
-			sf::Packet packetReceived;
-			tcpSocket.setBlocking( false );
-			while( !GoChooseSide( window ) ) {
-				if( !window.isOpen() )
-					return false;
-				sf::Socket::Status status = tcpSocket.receive( packetReceived );
-				if( status == sf::Socket::Status::Done ) {
-					int response;
-					if( packetReceived >> response ) {
-						auto color = static_cast< Piesa::Color >(response);
-						if( response >= 0 && response <= 1 ) {
-							multiplayerColor = Piesa::OtherColor( color );
-							break;
-						} else {
-							ConnectionLost( window );
-							return false;
-						}
-					} else {
-						ConnectionLost( window );
-						return false;
-					}
-				} else
-					if( status == sf::Socket::Status::Disconnected ) {
-						ConnectionLost( window );
-						return false;
-					}
-			}
 
 			return true;
 		}
@@ -577,6 +543,7 @@ bool Game::EstablishConnection() {
 			std::cout << "\nCannot listen to port 50000.\n";
 			CloseConnection();
 			PressAnyKeyToReturnToMenu();
+
 			return false;
 		}
 
@@ -587,16 +554,6 @@ bool Game::EstablishConnection() {
 				std::cout << "\nConnection successful! Starting game...\n";
 				ShowWindow( GetConsoleWindow(), SW_HIDE );
 
-				// choose side
-				while( !GoChooseSide( window ) )
-					if( !window.isOpen() )
-						return false;
-				sf::Packet packetSent;
-				packetSent << ( int )multiplayerColor;
-				if( tcpSocket.send( packetSent ) == sf::Socket::Status::Disconnected ) {
-					ConnectionLost( window );
-					return false;
-				}
 				return true;
 			}
 		// throw key away, and if it was a function key or arrow key, throw again !!!
@@ -604,7 +561,14 @@ bool Game::EstablishConnection() {
 			_getch();
 		// if a key was pressed, return to menu
 		ShowWindow( GetConsoleWindow(), SW_HIDE );
+
 		return false;
 	}
+}
+// call this to stop all the sounds
+void Game::StopSounds() {
+	moveSound.stop();
+	endSound.stop();
+	endSoundPlaying = false;
 }
 

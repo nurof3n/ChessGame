@@ -1,11 +1,5 @@
 #include "SpriteObj.h"
 
-SpriteObj::SpriteObj( SpriteObj&& other ) noexcept
-	:
-	_pos( std::move( other._pos ) ),
-	_texture( std::move( other._texture ) ),
-	_sprite( std::move( other._sprite ) ) {}
-
 SpriteObj::SpriteObj( const std::string& filename, const sf::Vector2f& pos, const sf::Vector2f& scale ) {
 	_pos = pos;
 	if( !_texture.loadFromFile( filename ) )
