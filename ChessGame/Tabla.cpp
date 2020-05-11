@@ -14,7 +14,7 @@ Tabla::~Tabla() noexcept {
 			if( _tabla[i][j] != nullptr )
 				Erase( { i, j } );
 }
-
+// put the pieces on the table for the start of the match
 void Tabla::Setup() {
 	for( int i = 0; i <= 8; ++i )
 		for( int j = 0; j <= 8; ++j )
@@ -52,7 +52,7 @@ void Tabla::Setup() {
 	turnleftMoved[0] = turnleftMoved[1] = false;
 	turnrightMoved[0] = turnrightMoved[1] = false;
 }
-
+// draws the pieces on the table
 void Tabla::DrawPiese( Graphics& gfx, sf::Shader* shader ) {
 	for( int i = 1; i <= 8; ++i )
 		for( int j = 1; j <= 8; ++j )
@@ -223,7 +223,6 @@ void Tabla::Move( const sf::Vector2i& init, const sf::Vector2i & final ) noexcep
 		else if( !turnrightMoved[ind] && init == sf::Vector2i( 8, (ind == 0 ? 1 : 8) ) )
 			turnrightMoved[ind] = true;
 }
-
 // returns true if the path from init to final is clear 
 bool Tabla::Scan( const sf::Vector2i& init, const sf::Vector2i & final ) const noexcept {
 	// !! dir will always be along the file/rank, or along the diagonals !!
@@ -267,7 +266,6 @@ bool Tabla::CanMove( Piesa::Color color, sf::Vector2i coords, Piesa::Piese type 
 				}
 	return false;
 }
-
 // returns true if the piece from init is attacking the square final (doesn't matter what piece is in final)
 bool Tabla::IsAttacking( const sf::Vector2i& init, const sf::Vector2i & final ) const {
 	if( !IsInBounds( init ) || !IsInBounds( final ) )
@@ -309,7 +307,6 @@ bool Tabla::IsAttacking( const sf::Vector2i& init, const sf::Vector2i & final ) 
 			return false;
 	}
 }
-
 // returns true if attackingColor is attacking the square coords (doesn't matter what piece is in coords)
 bool Tabla::IsAttacking( Piesa::Color attackingColor, sf::Vector2i coords ) const {
 	for( int i = 1; i <= 8; ++i )
@@ -318,7 +315,7 @@ bool Tabla::IsAttacking( Piesa::Color attackingColor, sf::Vector2i coords ) cons
 				return true;
 	return false;
 }
-
+// returns move code for recording in pgn file
 std::string Tabla::GetMoveString( sf::Vector2i oldcoords, sf::Vector2i coords, int moveType ) {
 	std::string moveString;
 	if( moveType & MV_CASTLING )
