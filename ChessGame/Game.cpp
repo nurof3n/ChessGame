@@ -17,7 +17,6 @@ Button buttonPlaySingle( "Content/PlayButtonSingle.png", { 128.0f, 194.0f } );
 Button buttonPlayMulti( "Content/PlayButtonMulti.png", { 128.0f, 252.0f } );
 Button buttonWhite( "Content/Piese/Pion_alb.png", { 64.0f, 200.0f }, { 4.0, 4.0 } );
 Button buttonBlack( "Content/Piese/Pion_negru.png", { 320.0f, 200.0f }, { 4.0, 4.0 } );
-SpriteObj textChoose( "Content/ChooseSide.png" );
 
 Graphics& Game::gfx = Graphics::GetInstance();
 
@@ -104,11 +103,15 @@ void Game::ConnectionLost() {
 	std::cout << "Connection lost.\n";
 	PressAnyKeyToReturnToMenu();
 	isStarted = false;
+	isChoosingSides = false;
+	isFinished = false;
+	isMenu = true;
 }
 // closes the connection
 void Game::CloseConnection() {
 	isServer = false;
 	wantsRestart = false;
+	pendingRestart = false;
 	tcpSocket.disconnect();
 	tcpListener.close();
 }
@@ -136,12 +139,12 @@ void Game::ComposeFrame() {
 		if( piesaTinuta != nullptr )
 			gfx.Draw( piesaTinuta->GetSprite() );
 	} else
-		if( !isStarted ) {
+		if( isMenu ) {
 			gfx.Draw( buttonPlaySingle.GetSprite() );
 			gfx.Draw( buttonPlayMulti.GetSprite() );
 		} else
 			if( isChoosingSides ) {
-				textChoose = SpriteObj( isServer ? "Content/ChooseSide.png" : "Content/ChooseSideWait.png" );
+				SpriteObj textChoose( isServer ? "Content/ChooseSide.png" : "Content/ChooseSideWait.png" );
 
 				gfx.Draw( textChoose.GetSprite() );
 				gfx.Draw( buttonWhite.GetSprite() );
@@ -191,6 +194,8 @@ void Game::UpdateModel() {
 				// go to the menu
 				if( event.key.code == sf::Keyboard::M && isStarted ) {
 					isStarted = false;
+					isFinished = false;
+					isChoosingSides = false;
 					isMenu = true;
 					CloseConnection();
 					StopSounds();
@@ -199,26 +204,31 @@ void Game::UpdateModel() {
 				} else
 					// restart the game
 					if( event.key.code == sf::Keyboard::R && isFinished ) {
-						if( !isSinglePlayer && !wantsRestart && !refusedRestart ) {
-							wantsRestart = true;
-							// transmitem faptul ca vrem rematch
-							sf::Packet packetSent;
-							// request = 1 inseamna REMATCH
-							int request = 1;
-							packetSent << request;
-							tcpSocket.setBlocking( true );
-							if( tcpSocket.send( packetSent ) == sf::Socket::Status::Disconnected ) {
-								refusedRestart = true;
-								CloseConnection();
-							}
-							// daca si celalalt voia rematch, dam rematch
-							else
-								if( pendingRestart ) {
-									Restart();
-
-									return;
+						if( !isSinglePlayer ) {
+							// request restart only if haven't already done so, and the other hasn't left or rejected
+							if( !wantsRestart && !refusedRestart ) {
+								wantsRestart = true;
+								// transmitem faptul ca vrem rematch
+								sf::Packet packetSent;
+								// request = 1 inseamna REMATCH
+								int request = 1;
+								packetSent << request;
+								tcpSocket.setBlocking( true );
+								if( tcpSocket.send( packetSent ) == sf::Socket::Status::Disconnected ) {
+									refusedRestart = true;
+									CloseConnection();
 								}
-						} else {
+								// daca si celalalt voia rematch, dam rematch
+								else
+									if( pendingRestart ) {
+										Restart();
+
+										return;
+									}
+							}
+						}
+						// if singleplayer, just restart
+						else {
 							Restart();
 
 							return;
@@ -241,6 +251,7 @@ void Game::UpdateModel() {
 								if( EstablishConnection() ) {
 									isChoosingSides = true;
 									isSinglePlayer = false;
+									isMenu = false;
 								}
 
 								return;
@@ -254,8 +265,10 @@ void Game::UpdateModel() {
 									sf::Packet packetSent;
 									packetSent << ( int )multiplayerColor;
 									tcpSocket.setBlocking( true );
-									if( tcpSocket.send( packetSent ) == sf::Socket::Status::Disconnected )
+									if( tcpSocket.send( packetSent ) != sf::Socket::Status::Done )
 										ConnectionLost();
+									else
+										Restart();
 
 									return;
 								} else
@@ -264,16 +277,18 @@ void Game::UpdateModel() {
 										sf::Packet packetSent;
 										packetSent << ( int )multiplayerColor;
 										tcpSocket.setBlocking( true );
-										if( tcpSocket.send( packetSent ) == sf::Socket::Status::Disconnected )
+										if( tcpSocket.send( packetSent ) != sf::Socket::Status::Done )
 											ConnectionLost();
+										else
+											Restart();
 
 										return;
 									}
 							}
 						}
 		}
-
-	if( !isStarted )
+	// if in menu, nothing left to do
+	if( isMenu )
 		return;
 	// if finished, play the end sound
 	if( isFinished ) {
