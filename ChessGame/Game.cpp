@@ -27,6 +27,7 @@ Game& Game::GetInstance() noexcept {
 }
 // intro in console
 void Game::Setup() {
+#ifndef SKIP_INTRO
 	ShowWindow( GetConsoleWindow(), SW_SHOW );
 
 	std::cout << "---WELCOME TO CHESS IN C++!---\n";
@@ -38,7 +39,6 @@ void Game::Setup() {
 
 	system( "cls" );
 
-#ifndef SKIP_INTRO
 	std::cout << "READY? TYPE MACARENA\n";
 	std::string color = "";
 	do {
@@ -72,7 +72,7 @@ void Game::Setup() {
 // reinitialize variables here, to restart the game
 void Game::Restart() noexcept {
 	StopSounds();
-	_tabla.Setup();
+	_tabla.Setup( multiplayerColor );
 	crtColor = Piesa::Color::ALB;
 	round = 0;
 	refusedRestart = false;
@@ -380,13 +380,16 @@ void Game::UpdateModel() {
 		if( !IsLeftMouseHeld ) {			//daca incepe o mutare cu mouseul
 			IsLeftMouseHeld = true;
 			if( gfx.IsInWindow( pos ) ) {	//verificam sa nu fie mouseul in afara ferestrei
-				auto coords = Piesa::GetCoordsFromPos( pos );
+				// get the absolute coords
+				auto coords = _tabla.view( Piesa::GetCoordsFromPos( pos ) );
+				// do these in absolute coords
 				piesaTinuta = _tabla.GetPiesa( coords );
 				if( piesaTinuta != nullptr ) 				//daca am apasat pe o piesa, retinem vechea pozitie
 					if( piesaTinuta->GetColor() == crtColor ) {
-						_tabla.SetPointer( coords, nullptr );	//scoatem piesa de pe tabla
+						_tabla.SetPointer( coords, nullptr );	//scoatem piesa de la locul ei
 						oldpos = piesaTinuta->GetPos();
-					} else piesaTinuta = nullptr;
+					} else
+						piesaTinuta = nullptr;
 			}
 		}
 		if( piesaTinuta != nullptr )				//updatam pozitia piesei tinute, daca tinem vreuna
@@ -394,13 +397,16 @@ void Game::UpdateModel() {
 	} else {
 		sf::Vector2i oldcoords, coords;
 		int moveType;
+
 		// verificam daca suntem la rand 
 		if( isSinglePlayer || multiplayerColor == crtColor ) {
 			if( IsLeftMouseHeld ) {				// daca tocmai s-a terminat o miscare din mouse
 				IsLeftMouseHeld = false;
 				if( piesaTinuta != nullptr ) {	// daca am mutat o piesa
-					oldcoords = Piesa::GetCoordsFromPos( oldpos );
-					coords = Piesa::GetCoordsFromPos( piesaTinuta->GetPos() + sf::Vector2f( 32.0f, 32.0f ) );
+					// get the absolute coords
+					oldcoords = _tabla.view( Piesa::GetCoordsFromPos( oldpos ) );
+					coords = _tabla.view( Piesa::GetCoordsFromPos( piesaTinuta->GetPos() + sf::Vector2f( 32.0f, 32.0f ) ) );
+
 					piesaTinuta->MoveTo( oldpos );
 					_tabla.SetPointer( oldcoords, piesaTinuta );
 					piesaTinuta = nullptr;
@@ -448,20 +454,26 @@ void Game::Go( sf::RenderWindow& window ) {
 	ComposeFrame();
 	gfx.EndFrame();
 }
-// mutare fara verificare; pentru verificare se foloseste clasa Tabla
+// this should receive the real coordinates on the table (not the relative ones)
 void Game::Move( sf::Vector2i oldcoords, sf::Vector2i coords, int moveType ) {
-	// mai intai inregistram mutarea!
+	// get the relative coords
+	sf::Vector2i viewoldcoords = _tabla.view( oldcoords ),
+		viewcoords = _tabla.view( coords );
+
+	// do these in absolute coords
 	LogMove( oldcoords, coords, moveType );
+	_tabla.Move( oldcoords, coords );
 
 	// coloram patratele prin care se face mutarea
 	if( patratInit == nullptr )
 		patratInit = new SpriteObj( "Content/Patrat_initial.png", { 0,0 }, { 2.0,2.0 } );
 	if( patratFinal == nullptr )
 		patratFinal = new SpriteObj( "Content/Patrat_final.png", { 0,0 }, { 2.0,2.0 } );
-	patratInit->MoveTo( Piesa::GetPosFromCoords( oldcoords ) );
-	patratFinal->MoveTo( Piesa::GetPosFromCoords( coords ) );
+	// do these in relative coords
+	patratInit->MoveTo( Piesa::GetPosFromCoords( viewoldcoords ) );
+	patratFinal->MoveTo( Piesa::GetPosFromCoords( viewcoords ) );
 
-	_tabla.Move( oldcoords, coords );						// aici facem mutarea
+	// do these in absolute coords
 	if( moveType & MV_CASTLING )								// rocada
 		if( coords.x < 5 )		// rocada la stanga
 			_tabla.Move( sf::Vector2i( 1, coords.y ), sf::Vector2i( coords.x + 1, coords.y ) );
@@ -470,10 +482,10 @@ void Game::Move( sf::Vector2i oldcoords, sf::Vector2i coords, int moveType ) {
 	else if( moveType & MV_PROMOTION ) {						// promotie
 		_tabla.Erase( coords );
 		if( coords.y == 1 ) {
-			Piesa* piesa = new Piesa( "Content/Piese/Regina_negru.png", coords, Piesa::Piese::REGINA, Piesa::Color::NEGRU );
+			Piesa* piesa = new Piesa( "Content/Piese/Regina_negru.png", viewcoords, Piesa::Piese::REGINA, Piesa::Color::NEGRU );
 			_tabla.SetPiesa( coords, piesa );
 		} else {
-			Piesa* piesa = new Piesa( "Content/Piese/Regina_alb.png", coords, Piesa::Piese::REGINA, Piesa::Color::ALB );
+			Piesa* piesa = new Piesa( "Content/Piese/Regina_alb.png", viewcoords, Piesa::Piese::REGINA, Piesa::Color::ALB );
 			_tabla.SetPiesa( coords, piesa );
 		}
 	}
@@ -592,4 +604,3 @@ void Game::StopSounds() {
 	endSound.stop();
 	endSoundPlaying = false;
 }
-

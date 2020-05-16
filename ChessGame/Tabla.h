@@ -27,7 +27,8 @@ public:
 	Tabla();
 	~Tabla() noexcept;
 
-	void Setup();
+	sf::Vector2i view( const sf::Vector2i& coords );
+	void Setup( const Piesa::Color& viewColor );
 	void DrawPiese( Graphics& gfx, sf::Shader* shader = nullptr );
 	Piesa* GetPiesa( const sf::Vector2i& coords ) const noexcept;
 	sf::Vector2i GetPosRege( const Piesa::Color& color ) const noexcept;
@@ -47,9 +48,10 @@ public:
 	bool IsAttacking( Piesa::Color attackingColor, sf::Vector2i coords ) const;
 	std::string GetMoveString( sf::Vector2i oldcoords, sf::Vector2i coords, int moveType );
 	static std::string GetFileLetter( int x );
-	static std::string GetRankLetter( int y );
+	static std::string GetRankNumber( int y );
 private:
 	Piesa* _tabla[9][9];
+	Piesa::Color _viewColor;
 	sf::Vector2i posRege[2];
 	bool regeMoved[2], turnleftMoved[2], turnrightMoved[2];
 };

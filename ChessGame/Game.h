@@ -41,7 +41,7 @@ public:
 private:
 	Tabla _tabla;
 	Piesa::Color crtColor = Piesa::Color::ALB;
-	Piesa::Color multiplayerColor;
+	Piesa::Color multiplayerColor = Piesa::Color::ALB;
 	int round = 0;
 	bool wantsRestart = false;
 	bool pendingRestart = false;
