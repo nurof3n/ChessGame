@@ -1,5 +1,4 @@
 #include "Game.h"
-#include "Button.h"
 #include <iostream>
 #include <algorithm>
 #include <string>
@@ -13,13 +12,14 @@
 
 using namespace std::chrono_literals;
 
-Button buttonPlaySingle( "Content/PlayButtonSingle.png", { 128.0f, 194.0f } );
-Button buttonPlayMulti( "Content/PlayButtonMulti.png", { 128.0f, 252.0f } );
-Button buttonWhite( "Content/Piese/Pion_alb.png", { 64.0f, 200.0f }, { 4.0, 4.0 } );
-Button buttonBlack( "Content/Piese/Pion_negru.png", { 320.0f, 200.0f }, { 4.0, 4.0 } );
-
 Graphics& Game::gfx = Graphics::GetInstance();
 
+// remember to delete the pointers!!
+Game::~Game() {
+	delete patratInit;
+	delete patratFinal;
+	delete piesaTinuta;
+}
 // singleton
 Game& Game::GetInstance() noexcept {
 	static Game _instance;
@@ -61,9 +61,15 @@ void Game::Setup() {
 #endif
 
 	ShowWindow( GetConsoleWindow(), SW_HIDE );
+
+	buttonPlaySingle = Button( "Content/PlayButtonSingle.png", { 128.0f, 194.0f } );
+	buttonPlayMulti = Button( "Content/PlayButtonMulti.png", { 128.0f, 252.0f } );
+	buttonWhite = Button( "Content/Piese/Pion_alb.png", { 64.0f, 200.0f }, { 4.0, 4.0 } );
+	buttonBlack = Button( "Content/Piese/Pion_negru.png", { 320.0f, 200.0f }, { 4.0, 4.0 } );
+
 	gfx.Setup();
 }
-// remember to reinitialize variables here
+// reinitialize variables here, to restart the game
 void Game::Restart() noexcept {
 	StopSounds();
 	_tabla.Setup();

@@ -1,5 +1,6 @@
 #pragma once
 #include "Tabla.h"
+#include "Button.h"
 #include "Graphics.h"
 #include <SFML/Audio.hpp>
 #include <SFML/Network.hpp>
@@ -18,6 +19,7 @@ public:
 private:
 	Game() = default;
 public:
+	~Game();
 	static Game& GetInstance() noexcept;
 	Game( const Game& ) = delete;
 	const Game& operator=( const Game& ) = delete;
@@ -62,5 +64,6 @@ private:
 	Piesa* piesaTinuta = nullptr;
 	sf::TcpSocket tcpSocket;
 	sf::TcpListener tcpListener;
+	Button buttonPlaySingle, buttonPlayMulti, buttonWhite, buttonBlack;
 };
 
