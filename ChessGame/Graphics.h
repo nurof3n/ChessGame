@@ -7,18 +7,18 @@ class Graphics {
 private:
 	Graphics() = default;
 public:
-	static Graphics& GetInstance() noexcept;
+	static Graphics& getInstance() noexcept;
 
 	~Graphics() noexcept = default;
 	Graphics( const Graphics& ) = delete;
 	const Graphics& operator=( const Graphics& ) = delete;
 
-	sf::RenderWindow& GetWindow() noexcept;
-	void Setup();
-	void BeginFrame();
-	void EndFrame();
-	void Draw( const sf::Drawable& drawable, const sf::RenderStates& states = sf::RenderStates::Default );
-	bool IsInWindow( const sf::Vector2f& pos );
+	sf::RenderWindow& getWindow() noexcept;
+	void setup();
+	void beginFrame();
+	void endFrame();
+	void draw( const sf::Drawable& drawable, const sf::RenderStates& states = sf::RenderStates::Default );
+	bool isInWindow( const sf::Vector2f& pos );
 private:
 	sf::RenderWindow window;
 };

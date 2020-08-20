@@ -19,31 +19,31 @@ SpriteObj& SpriteObj::operator=( const SpriteObj& other ) {
 	return *this;
 }
 
-void SpriteObj::Draw( Graphics& gfx ) {
-	gfx.Draw( GetSprite() );
+void SpriteObj::draw( Graphics& gfx ) {
+	gfx.draw( getSprite() );
 }
 
-sf::Vector2f SpriteObj::GetPos() const noexcept {
+sf::Vector2f SpriteObj::getPos() const noexcept {
 	return _pos;
 }
 
-void SpriteObj::SetPos( const sf::Vector2f& pos ) {
+void SpriteObj::setPos( const sf::Vector2f& pos ) {
 	_pos = pos;
 }
 
-sf::Texture SpriteObj::GetTexture() const noexcept {
+sf::Texture SpriteObj::getTexture() const noexcept {
 	return _texture;
 }
 
-void SpriteObj::SetTexture( const sf::Texture& texture ) {
+void SpriteObj::setTexture( const sf::Texture& texture ) {
 	_texture = texture;
 }
 
-sf::Sprite SpriteObj::GetSprite() const noexcept {
+sf::Sprite SpriteObj::getSprite() const noexcept {
 	return _sprite;
 }
 
-void SpriteObj::MoveTo( const sf::Vector2f& pos ) noexcept {
+void SpriteObj::moveTo( const sf::Vector2f& pos ) noexcept {
 	_sprite.move( pos - _pos );
 	_pos = pos;
 }

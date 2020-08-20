@@ -1,0 +1,53 @@
+Language: Cpp  
+BasedOnStyle: Google
+IndentCaseLabels: true
+AllowAllArgumentsOnNextLine: true
+AllowAllParametersOfDeclarationOnNextLine: true
+AllowShortBlocksOnASingleLine: false
+AlignTrailingComments: true
+AlignEscapedNewlines: Left 
+AlignOperands: true
+AlignConsecutiveMacros: true
+AlignConsecutiveAssignments: true
+AlignConsecutiveDeclarations: true
+AlignAfterOpenBracket: Align
+AlwaysBreakTemplateDeclarations: true
+IndentWidth: 4
+TabWidth: 4
+IndentCaseLabels: true
+ColumnLimit: 0
+Cpp11BracedListStyle: false
+AllowShortFunctionsOnASingleLine: false
+AllowShortCaseLabelsOnASingleLine: false
+AllowShortIfStatementsOnASingleLine: false
+AllowShortLoopsOnASingleLine: false
+PointerBindsToType: true
+NamespaceIndentation: All
+SortIncludes: true
+SpaceBeforeCtorInitializerColon: true
+SpaceBeforeParens: false
+SpaceAfterCStyleCast: true
+SpaceBeforeInheritanceColon: true
+SpaceBeforeRangeBasedForLoopColon: true
+SpaceInEmptyParentheses: false
+SpacesInParentheses: true
+SpacesInContainerLiterals: true
+AccessModifierOffset: -4
+MaxEmptyLinesToKeep: 2
+
+# Configure each individual brace in BraceWrapping
+BreakBeforeBraces: Custom
+# Control of individual brace wrapping cases
+BraceWrapping: {
+    AfterClass: 'true'
+    AfterControlStatement: 'false'
+    AfterEnum : 'true'
+    AfterFunction : 'true'
+    AfterNamespace : 'true'
+    AfterStruct : 'true'
+    BeforeCatch : 'true'
+    BeforeElse : 'true'
+    SplitEmptyFunction : 'false'
+    SplitEmptyRecord : 'false'
+    SplitEmptyNamespace : 'true'
+}

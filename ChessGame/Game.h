@@ -7,9 +7,11 @@
 #include <fstream>
 
 
-class Game {
+class Game
+{
 public:
-	enum class RezMutare {
+	enum class RezMutare
+	{
 		INVALID,
 		OK,
 		CAPTURA,
@@ -20,22 +22,22 @@ private:
 	Game() = default;
 public:
 	~Game();
-	static Game& GetInstance() noexcept;
+	static Game& getInstance() noexcept;
 	Game( const Game& ) = delete;
 	const Game& operator=( const Game& ) = delete;
-	void Setup();
-	void Restart() noexcept;
-	void PressAnyKeyToReturnToMenu();
-	void ConnectionLost();
-	void CloseConnection();
-	void ComposeFrame();
-	void UpdateModel();
-	void Go( sf::RenderWindow& window );
-	void Move( sf::Vector2i oldcoords, sf::Vector2i coords, int moveType );
-	void LogMove( sf::Vector2i oldcoords, sf::Vector2i coords, int moveType );
-	void WriteLog( std::string output );
-	bool EstablishConnection();
-	void StopSounds();
+	void setup();
+	void restart() noexcept;
+	void pressAnyKeyToReturnToMenu();
+	void connectionLost();
+	void closeConnection();
+	void composeFrame();
+	void updateModel();
+	void go( sf::RenderWindow& window );
+	void move( sf::Vector2i oldcoords, sf::Vector2i coords, int moveType );
+	void logMove( sf::Vector2i oldcoords, sf::Vector2i coords, int moveType );
+	void writeLog( std::string output );
+	bool establishConnection();
+	void stopSounds();
 public:
 	static Graphics& gfx;
 private:

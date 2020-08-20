@@ -12,21 +12,24 @@
 
 using namespace std::chrono_literals;
 
-Graphics& Game::gfx = Graphics::GetInstance();
+Graphics& Game::gfx = Graphics::getInstance();
 
 // remember to delete the pointers!!
-Game::~Game() {
+Game::~Game()
+{
 	delete patratInit;
 	delete patratFinal;
 	delete piesaTinuta;
 }
 // singleton
-Game& Game::GetInstance() noexcept {
+Game& Game::getInstance() noexcept
+{
 	static Game _instance;
 	return _instance;
 }
 // intro in console
-void Game::Setup() {
+void Game::setup()
+{
 #ifndef SKIP_INTRO
 	ShowWindow( GetConsoleWindow(), SW_SHOW );
 
@@ -67,12 +70,13 @@ void Game::Setup() {
 	buttonWhite = Button( "Content/Piese/Pion_alb.png", { 64.0f, 200.0f }, { 4.0, 4.0 } );
 	buttonBlack = Button( "Content/Piese/Pion_negru.png", { 320.0f, 200.0f }, { 4.0, 4.0 } );
 
-	gfx.Setup();
+	gfx.setup();
 }
 // reinitialize variables here, to restart the game
-void Game::Restart() noexcept {
-	StopSounds();
-	_tabla.Setup( multiplayerColor );
+void Game::restart() noexcept
+{
+	stopSounds();
+	_tabla.setup( multiplayerColor );
 	crtColor = Piesa::Color::ALB;
 	round = 0;
 	refusedRestart = false;
@@ -94,7 +98,8 @@ void Game::Restart() noexcept {
 	pgnOutput.open( pgnFilename );
 }
 // shows the message and waits for key input to return to menu
-void Game::PressAnyKeyToReturnToMenu() {
+void Game::pressAnyKeyToReturnToMenu()
+{
 	ShowWindow( GetConsoleWindow(), SW_SHOW );
 	std::cout << "Press any key to return to menu...";
 	// throw key away, and if it was a function key or arrow key, throw again !!!
@@ -103,18 +108,20 @@ void Game::PressAnyKeyToReturnToMenu() {
 	ShowWindow( GetConsoleWindow(), SW_HIDE );
 }
 // says that connection was lost and waits for input to return to menu
-void Game::ConnectionLost() {
-	CloseConnection();
+void Game::connectionLost()
+{
+	closeConnection();
 	system( "cls" );
 	std::cout << "Connection lost.\n";
-	PressAnyKeyToReturnToMenu();
+	pressAnyKeyToReturnToMenu();
 	isStarted = false;
 	isChoosingSides = false;
 	isFinished = false;
 	isMenu = true;
 }
 // closes the connection
-void Game::CloseConnection() {
+void Game::closeConnection()
+{
 	isServer = false;
 	wantsRestart = false;
 	pendingRestart = false;
@@ -122,7 +129,8 @@ void Game::CloseConnection() {
 	tcpListener.close();
 }
 // draws the objects on the screen
-void Game::ComposeFrame() {
+void Game::composeFrame()
+{
 	static sf::Shader blurShader;
 	static sf::RenderStates renderStates;
 	if( !isStarted || isFinished ) {
@@ -131,68 +139,76 @@ void Game::ComposeFrame() {
 		blurShader.setUniform( "texture", sf::Shader::CurrentTexture );
 		blurShader.setUniform( "blur_radius", 0.005f );
 		renderStates = sf::RenderStates( &blurShader );
-	} else
+	}
+	else
 		renderStates = sf::RenderStates::Default;
 
-	gfx.Draw( _tabla.GetSprite(), renderStates );
+	gfx.draw( _tabla.getSprite(), renderStates );
 
 	if( isStarted && !isFinished ) {
 		if( patratInit != nullptr )
-			gfx.Draw( patratInit->GetSprite() );
+			gfx.draw( patratInit->getSprite() );
 		if( patratFinal != nullptr )
-			gfx.Draw( patratFinal->GetSprite() );
-		_tabla.DrawPiese( gfx );
+			gfx.draw( patratFinal->getSprite() );
+		_tabla.drawPiese( gfx );
 		if( piesaTinuta != nullptr )
-			gfx.Draw( piesaTinuta->GetSprite() );
-	} else
+			gfx.draw( piesaTinuta->getSprite() );
+	}
+	else
 		if( isMenu ) {
-			gfx.Draw( buttonPlaySingle.GetSprite() );
-			gfx.Draw( buttonPlayMulti.GetSprite() );
-		} else
+			gfx.draw( buttonPlaySingle.getSprite() );
+			gfx.draw( buttonPlayMulti.getSprite() );
+		}
+		else
 			if( isChoosingSides ) {
 				SpriteObj textChoose( isServer ? "Content/ChooseSide.png" : "Content/ChooseSideWait.png" );
 
-				gfx.Draw( textChoose.GetSprite() );
-				gfx.Draw( buttonWhite.GetSprite() );
-				gfx.Draw( buttonBlack.GetSprite() );
-			} else
+				gfx.draw( textChoose.getSprite() );
+				gfx.draw( buttonWhite.getSprite() );
+				gfx.draw( buttonBlack.getSprite() );
+			}
+			else
 				if( isFinished ) {
 					if( patratInit != nullptr ) {
 						blurShader.setUniform( "texture", sf::Shader::CurrentTexture );
-						gfx.Draw( patratInit->GetSprite(), &blurShader );
+						gfx.draw( patratInit->getSprite(), &blurShader );
 					}
 					if( patratFinal != nullptr ) {
 						blurShader.setUniform( "texture", sf::Shader::CurrentTexture );
-						gfx.Draw( patratFinal->GetSprite(), &blurShader );
+						gfx.draw( patratFinal->getSprite(), &blurShader );
 					}
 
 					// desenam piesele de pe tabla, cu shaderul de blur
-					_tabla.DrawPiese( gfx, &blurShader );
+					_tabla.drawPiese( gfx, &blurShader );
 
 					if( refusedRestart ) {
 						static SpriteObj refusedRematch( "Content/RefusedRematch.png" );
-						gfx.Draw( refusedRematch.GetSprite() );
-					} else if( wantsRestart ) {
+						gfx.draw( refusedRematch.getSprite() );
+					}
+					else if( wantsRestart ) {
 						static SpriteObj restart( "Content/Restart.png" );
-						gfx.Draw( restart.GetSprite() );
-					} else if( pendingRestart ) {
+						gfx.draw( restart.getSprite() );
+					}
+					else if( pendingRestart ) {
 						static SpriteObj pending( "Content/PendingRematch.png" );
-						gfx.Draw( pending.GetSprite() );
-					} else {
+						gfx.draw( pending.getSprite() );
+					}
+					else {
 						static SpriteObj checkmate( isCheckMate ? "Content/CheckMate.png" : "Content/StaleMate.png" );
-						gfx.Draw( checkmate.GetSprite() );
+						gfx.draw( checkmate.getSprite() );
 					}
 				}
 }
 // updates game logic
-void Game::UpdateModel() {
-	static auto& window = gfx.GetWindow();
+void Game::updateModel()
+{
+	static auto& window = gfx.getWindow();
 
 	sf::Event event;
 	while( window.pollEvent( event ) )
 		switch( event.type ) {
 			case sf::Event::Closed:
-				CloseConnection();
+				closeConnection();
 				window.close();
 
 				return;
@@ -203,12 +219,13 @@ void Game::UpdateModel() {
 					isFinished = false;
 					isChoosingSides = false;
 					isMenu = true;
-					CloseConnection();
-					StopSounds();
+					closeConnection();
+					stopSounds();
 
 					return;
-				} else
-					// restart the game
+				}
+				else
+				 // restart the game
 					if( event.key.code == sf::Keyboard::R && isFinished ) {
 						if( !isSinglePlayer ) {
 							// request restart only if haven't already done so, and the other hasn't left or rejected
@@ -222,12 +239,12 @@ void Game::UpdateModel() {
 								tcpSocket.setBlocking( true );
 								if( tcpSocket.send( packetSent ) == sf::Socket::Status::Disconnected ) {
 									refusedRestart = true;
-									CloseConnection();
+									closeConnection();
 								}
 								// daca si celalalt voia rematch, dam rematch
 								else
 									if( pendingRestart ) {
-										Restart();
+										restart();
 
 										return;
 									}
@@ -235,7 +252,7 @@ void Game::UpdateModel() {
 						}
 						// if singleplayer, just restart
 						else {
-							Restart();
+							restart();
 
 							return;
 						}
@@ -246,7 +263,7 @@ void Game::UpdateModel() {
 					if( isMenu ) {
 						// start singleplayer game
 						if( buttonPlaySingle.mouseIsOver( window ) ) {
-							Restart();
+							restart();
 							isSinglePlayer = true;
 
 							return;
@@ -254,7 +271,7 @@ void Game::UpdateModel() {
 						// start multiplayer game
 						else
 							if( buttonPlayMulti.mouseIsOver( window ) ) {
-								if( EstablishConnection() ) {
+								if( establishConnection() ) {
 									isChoosingSides = true;
 									isSinglePlayer = false;
 									isMenu = false;
@@ -262,31 +279,33 @@ void Game::UpdateModel() {
 
 								return;
 							}
-					} else
+					}
+					else
 						if( isChoosingSides ) {
 							// the server chooses its side
 							if( isServer ) {
 								if( buttonWhite.mouseIsOver( window ) ) {
 									multiplayerColor = Piesa::Color::ALB;
 									sf::Packet packetSent;
-									packetSent << ( int )multiplayerColor;
+									packetSent << (int) multiplayerColor;
 									tcpSocket.setBlocking( true );
 									if( tcpSocket.send( packetSent ) != sf::Socket::Status::Done )
-										ConnectionLost();
+										connectionLost();
 									else
-										Restart();
+										restart();
 
 									return;
-								} else
+								}
+								else
 									if( buttonBlack.mouseIsOver( window ) ) {
 										multiplayerColor = Piesa::Color::NEGRU;
 										sf::Packet packetSent;
-										packetSent << ( int )multiplayerColor;
+										packetSent << (int) multiplayerColor;
 										tcpSocket.setBlocking( true );
 										if( tcpSocket.send( packetSent ) != sf::Socket::Status::Done )
-											ConnectionLost();
+											connectionLost();
 										else
-											Restart();
+											restart();
 
 										return;
 									}
@@ -311,18 +330,20 @@ void Game::UpdateModel() {
 					pendingRestart = true;
 					// daca si noi voiam rematch, dam rematch
 					if( wantsRestart ) {
-						Restart();
+						restart();
 
 						return;
 					}
-				} else {
-					refusedRestart = true;
-					CloseConnection();
 				}
-			} else
+				else {
+					refusedRestart = true;
+					closeConnection();
+				}
+			}
+			else
 				if( status == sf::Socket::Status::Disconnected ) {
 					refusedRestart = true;
-					CloseConnection();
+					closeConnection();
 				}
 		}
 
@@ -346,32 +367,34 @@ void Game::UpdateModel() {
 		if( status == sf::Socket::Status::Done ) {
 			int response;
 			if( packetReceived >> response ) {
-				auto color = static_cast< Piesa::Color >(response);
+				auto color = static_cast<Piesa::Color>(response);
 				if( response >= 0 && response <= 1 ) {
-					multiplayerColor = Piesa::OtherColor( color );
-					Restart();
-
-					return;
-				} else {
-					ConnectionLost();
+					multiplayerColor = Piesa::otherColor( color );
+					restart();
 
 					return;
 				}
-			} else {
-				ConnectionLost();
+				else {
+					connectionLost();
+
+					return;
+				}
+			}
+			else {
+				connectionLost();
 
 				return;
 			}
-		} else
+		}
+		else
 			if( status == sf::Socket::Status::Disconnected ) {
-				ConnectionLost();
+				connectionLost();
 
 				return;
 			}
 
 		return;
 	}
-
 	// actual chess game logic
 	static sf::Vector2f oldpos;
 	static bool IsLeftMouseHeld = false;
@@ -379,22 +402,24 @@ void Game::UpdateModel() {
 		auto pos = sf::Vector2f( sf::Mouse::getPosition( window ) );
 		if( !IsLeftMouseHeld ) {			//daca incepe o mutare cu mouseul
 			IsLeftMouseHeld = true;
-			if( gfx.IsInWindow( pos ) ) {	//verificam sa nu fie mouseul in afara ferestrei
+			if( gfx.isInWindow( pos ) ) {	//verificam sa nu fie mouseul in afara ferestrei
 				// get the absolute coords
-				auto coords = _tabla.view( Piesa::GetCoordsFromPos( pos ) );
+				auto coords = _tabla.view( Piesa::getCoordsFromPos( pos ) );
 				// do these in absolute coords
-				piesaTinuta = _tabla.GetPiesa( coords );
+				piesaTinuta = _tabla.getPiesa( coords );
 				if( piesaTinuta != nullptr ) 				//daca am apasat pe o piesa, retinem vechea pozitie
-					if( piesaTinuta->GetColor() == crtColor ) {
-						_tabla.SetPointer( coords, nullptr );	//scoatem piesa de la locul ei
-						oldpos = piesaTinuta->GetPos();
-					} else
+					if( piesaTinuta->getColor() == crtColor ) {
+						_tabla.setPointer( coords, nullptr );	//scoatem piesa de la locul ei
+						oldpos = piesaTinuta->getPos();
+					}
+					else
 						piesaTinuta = nullptr;
 			}
 		}
 		if( piesaTinuta != nullptr )				//updatam pozitia piesei tinute, daca tinem vreuna
-			piesaTinuta->MoveTo( pos - sf::Vector2f( 32.0f, 32.0f ) );
-	} else {
+			piesaTinuta->moveTo( pos - sf::Vector2f( 32.0f, 32.0f ) );
+	}
+	else {
 		sf::Vector2i oldcoords, coords;
 		int moveType;
 
@@ -404,16 +429,16 @@ void Game::UpdateModel() {
 				IsLeftMouseHeld = false;
 				if( piesaTinuta != nullptr ) {	// daca am mutat o piesa
 					// get the absolute coords
-					oldcoords = _tabla.view( Piesa::GetCoordsFromPos( oldpos ) );
-					coords = _tabla.view( Piesa::GetCoordsFromPos( piesaTinuta->GetPos() + sf::Vector2f( 32.0f, 32.0f ) ) );
+					oldcoords = _tabla.view( Piesa::getCoordsFromPos( oldpos ) );
+					coords = _tabla.view( Piesa::getCoordsFromPos( piesaTinuta->getPos() + sf::Vector2f( 32.0f, 32.0f ) ) );
 
-					piesaTinuta->MoveTo( oldpos );
-					_tabla.SetPointer( oldcoords, piesaTinuta );
+					piesaTinuta->moveTo( oldpos );
+					_tabla.setPointer( oldcoords, piesaTinuta );
 					piesaTinuta = nullptr;
 
-					if( (moveType = _tabla.VerifyMoveWithCheck( oldcoords, coords )) & MV_VALID ) {
+					if( (moveType = _tabla.verifyMoveWithCheck( oldcoords, coords )) & MV_VALID ) {
 						// facem mutarea
-						Move( oldcoords, coords, moveType );
+						move( oldcoords, coords, moveType );
 
 						// transmitem mutarea la celalalt jucator
 						if( !isSinglePlayer ) {
@@ -422,7 +447,7 @@ void Game::UpdateModel() {
 							tcpSocket.setBlocking( true );
 							// if connection is lost, return to menu
 							if( tcpSocket.send( packetSent ) == sf::Socket::Status::Disconnected )
-								ConnectionLost();
+								connectionLost();
 						}
 					}
 				}
@@ -436,33 +461,36 @@ void Game::UpdateModel() {
 			// daca am primit pachetul, reprezentam mutarea local
 			if( status == sf::Socket::Status::Done ) {
 				if( packetReceived2 >> oldcoords.x >> oldcoords.y >> coords.x >> coords.y >> moveType )
-					Move( oldcoords, coords, moveType );
+					move( oldcoords, coords, moveType );
 				// if packet is lost, return to menu
 				else
-					ConnectionLost();
-			} else
-				// if connection is lost, return to menu
+					connectionLost();
+			}
+			else
+			 // if connection is lost, return to menu
 				if( status == sf::Socket::Status::Disconnected )
-					ConnectionLost();
+					connectionLost();
 		}
 	}
 }
 // main game loop
-void Game::Go( sf::RenderWindow& window ) {
-	gfx.BeginFrame();
-	UpdateModel();
-	ComposeFrame();
-	gfx.EndFrame();
+void Game::go( sf::RenderWindow& window )
+{
+	gfx.beginFrame();
+	updateModel();
+	composeFrame();
+	gfx.endFrame();
 }
 // this should receive the real coordinates on the table (not the relative ones)
-void Game::Move( sf::Vector2i oldcoords, sf::Vector2i coords, int moveType ) {
-	// get the relative coords
+void Game::move( sf::Vector2i oldcoords, sf::Vector2i coords, int moveType )
+{
+// get the relative coords
 	sf::Vector2i viewoldcoords = _tabla.view( oldcoords ),
 		viewcoords = _tabla.view( coords );
 
 	// do these in absolute coords
-	LogMove( oldcoords, coords, moveType );
-	_tabla.Move( oldcoords, coords );
+	logMove( oldcoords, coords, moveType );
+	_tabla.move( oldcoords, coords );
 
 	// coloram patratele prin care se face mutarea
 	if( patratInit == nullptr )
@@ -470,23 +498,24 @@ void Game::Move( sf::Vector2i oldcoords, sf::Vector2i coords, int moveType ) {
 	if( patratFinal == nullptr )
 		patratFinal = new SpriteObj( "Content/Patrat_final.png", { 0,0 }, { 2.0,2.0 } );
 	// do these in relative coords
-	patratInit->MoveTo( Piesa::GetPosFromCoords( viewoldcoords ) );
-	patratFinal->MoveTo( Piesa::GetPosFromCoords( viewcoords ) );
+	patratInit->moveTo( Piesa::getPosFromCoords( viewoldcoords ) );
+	patratFinal->moveTo( Piesa::getPosFromCoords( viewcoords ) );
 
 	// do these in absolute coords
 	if( moveType & MV_CASTLING )								// rocada
 		if( coords.x < 5 )		// rocada la stanga
-			_tabla.Move( sf::Vector2i( 1, coords.y ), sf::Vector2i( coords.x + 1, coords.y ) );
+			_tabla.move( sf::Vector2i( 1, coords.y ), sf::Vector2i( coords.x + 1, coords.y ) );
 		else					// rocada la dreapta
-			_tabla.Move( sf::Vector2i( 8, coords.y ), sf::Vector2i( coords.x - 1, coords.y ) );
+			_tabla.move( sf::Vector2i( 8, coords.y ), sf::Vector2i( coords.x - 1, coords.y ) );
 	else if( moveType & MV_PROMOTION ) {						// promotie
-		_tabla.Erase( coords );
+		_tabla.erase( coords );
 		if( coords.y == 1 ) {
 			Piesa* piesa = new Piesa( "Content/Piese/Regina_negru.png", viewcoords, Piesa::Piese::REGINA, Piesa::Color::NEGRU );
-			_tabla.SetPiesa( coords, piesa );
-		} else {
+			_tabla.setPiesa( coords, piesa );
+		}
+		else {
 			Piesa* piesa = new Piesa( "Content/Piese/Regina_alb.png", viewcoords, Piesa::Piese::REGINA, Piesa::Color::ALB );
-			_tabla.SetPiesa( coords, piesa );
+			_tabla.setPiesa( coords, piesa );
 		}
 	}
 	// play move sound
@@ -500,35 +529,41 @@ void Game::Move( sf::Vector2i oldcoords, sf::Vector2i coords, int moveType ) {
 	moveSound.play();
 
 	// switch turns or end the game
-	if( _tabla.IsInCheckMate( Piesa::OtherColor( crtColor ) ) ) {
+	if( _tabla.isInCheckMate( Piesa::otherColor( crtColor ) ) ) {
 		isCheckMate = true;
 		isFinished = true;
-		WriteLog( crtColor == Piesa::Color::ALB ? "# 1-0" : "# 0-1" );
-	} else if( _tabla.IsInCheck( Piesa::OtherColor( crtColor ) ) ) {
-		WriteLog( "+" );
-		crtColor = Piesa::OtherColor( crtColor );
-	} else if( _tabla.IsInStaleMate( Piesa::OtherColor( crtColor ) ) ) {
+		writeLog( crtColor == Piesa::Color::ALB ? "# 1-0" : "# 0-1" );
+	}
+	else if( _tabla.isInCheck( Piesa::otherColor( crtColor ) ) ) {
+		writeLog( "+" );
+		crtColor = Piesa::otherColor( crtColor );
+	}
+	else if( _tabla.isInStaleMate( Piesa::otherColor( crtColor ) ) ) {
 		isStaleMate = true;
 		isFinished = true;
-		WriteLog( "1/2-1/2" );
-	} else
-		crtColor = Piesa::OtherColor( crtColor );
+		writeLog( "1/2-1/2" );
+	}
+	else
+		crtColor = Piesa::otherColor( crtColor );
 }
 // logs the move into pgn format
-void Game::LogMove( sf::Vector2i oldcoords, sf::Vector2i coords, int moveType ) {
-	std::string moveString = _tabla.GetMoveString( oldcoords, coords, moveType );
-	auto color = _tabla.GetPiesa( oldcoords )->GetColor();
+void Game::logMove( sf::Vector2i oldcoords, sf::Vector2i coords, int moveType )
+{
+	std::string moveString = _tabla.getMoveString( oldcoords, coords, moveType );
+	auto color = _tabla.getPiesa( oldcoords )->getColor();
 
 	if( color == Piesa::Color::ALB )
 		pgnOutput << ' ' << ++round << '.';
 	pgnOutput << ' ' << moveString;
 }
 // writes custom stream into the pgn file
-void Game::WriteLog( std::string output ) {
+void Game::writeLog( std::string output )
+{
 	pgnOutput << output;
 }
 // returns true if connection was established (forward port 50000 for server ok)
-bool Game::EstablishConnection() {
+bool Game::establishConnection()
+{
 	system( "cls" );
 	ShowWindow( GetConsoleWindow(), SW_SHOW );
 	std::cout << "Enter IP or give the other player your IP to connect\n";
@@ -542,17 +577,20 @@ bool Game::EstablishConnection() {
 			connecting = true;
 			ip = command.substr( 9 );
 			break;
-		} else if( command == "\\wait" ) {
+		}
+		else if( command == "\\wait" ) {
 			break;
-		} else if( command == "\\close" ) {
+		}
+		else if( command == "\\close" ) {
 			ShowWindow( GetConsoleWindow(), SW_HIDE );
 
 			return false;
-		} else
+		}
+		else
 			std::cout << "Unrecognized command " << command << '\n';
 	}
 
-	auto& window = gfx.GetWindow();
+	auto& window = gfx.getWindow();
 	if( connecting ) {
 		isServer = false;
 
@@ -560,22 +598,24 @@ bool Game::EstablishConnection() {
 		tcpSocket.setBlocking( true );
 		sf::Socket::Status status = tcpSocket.connect( ip, 50000, sf::seconds( 5.0f ) );
 		if( status != sf::Socket::Done ) {
-			ConnectionLost();
+			connectionLost();
 
 			return false;
-		} else {
+		}
+		else {
 			std::cout << "\nConnection successful! Starting game...\n";
 			ShowWindow( GetConsoleWindow(), SW_HIDE );
 
 			return true;
 		}
-	} else {
+	}
+	else {
 		isServer = true;
 
 		if( tcpListener.listen( 50000 ) != sf::Socket::Status::Done ) {
 			std::cout << "\nCannot listen to port 50000.\n";
-			CloseConnection();
-			PressAnyKeyToReturnToMenu();
+			closeConnection();
+			pressAnyKeyToReturnToMenu();
 
 			return false;
 		}
@@ -599,7 +639,8 @@ bool Game::EstablishConnection() {
 	}
 }
 // call this to stop all the sounds
-void Game::StopSounds() {
+void Game::stopSounds()
+{
 	moveSound.stop();
 	endSound.stop();
 	endSoundPlaying = false;
